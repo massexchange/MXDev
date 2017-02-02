@@ -128,7 +128,7 @@ const hipchatRoom = "Development";
 
 const approvalMessage = (approver, approval, issue) =>
     `${approver.name} just approved <a href="${approval.review.html_url}">${approval.pull_request.title}</a>
-(<a href="${issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>)`;
+for issue <a href="${issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>`;
 
 const notifyHipchat = (approver, approval) => issue => {
     console.log("Notifying Hipchat...");
