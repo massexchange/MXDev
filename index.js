@@ -16,7 +16,7 @@ const github = new GitHubApi({
     timeout: 5000
 });
 
-const hipchat = new Hipchatter(nconf.get("HIPCHAT:TOKEN"));
+const hipchat = new Hipchatter();
 
 const isPingEvent = event =>
     event.zen &&
@@ -34,7 +34,8 @@ var handleGithubWebhook = event => {
         if(validHookConfig(event))
             return Promise.resolve("Configuration valid!");
         else
-            return Promise.reject(new Error(`Webhook configuration is incorrect! Expecting event ${pullRequestReviewEvent}`));
+            return Promise.reject(new Error(
+                `Webhook configuration is incorrect! Expecting event ${pullRequestReviewEvent}`));
     }
 
     const issueKey = event.pull_request.head.ref;
@@ -46,27 +47,31 @@ var handleGithubWebhook = event => {
         return;
     }
 
-    return findGithubUserName(reviewer)
-        .then(findJiraUsername)
-        .then(addApproverTo(event.pull_request.head.ref))
-        .then(lookupJiraIssue)
-        .then(notifyHipchat)
-        .then(() =>
-            console.log("Done! (Probably)"));
+    return findGithubUserName(reviewer).then(user =>
+        findJiraUsername(user)
+            .then(addApproverTo(event.pull_request.head.ref))
+            .then(lookupJiraIssue)
+            .then(notifyHipchat(user, event))
+            .then(() =>
+                console.log("Done! (Probably)")));
 };
+
+const losers = nconf.get("LOSERS");
 
 var findGithubUserName = username => {
     console.log(`Finding Github user name for ${username}...`);
-    return github.users.getForUser({
-        username
-    });
+    const loserName = losers[username];
+    if(loserName)
+        return Promise.resolve({ name: loserName });
+
+    return github.users.getForUser({ username })
+        .catch(err => Promise.reject(err.status));
 };
 
 var secretSecretJiraCredsShh = nconf.get("JIRA");
-
 var jiraAPI = "https://massexchange.atlassian.net/rest/api/2";
 
-var findJiraUsername = (user) => {
+var findJiraUsername = user => {
     console.log(`Finding JIRA username for ${user.name}...`);
     return request({
         url: `${jiraAPI}/user/search`,
@@ -75,24 +80,25 @@ var findJiraUsername = (user) => {
         },
         json: true,
         auth: secretSecretJiraCredsShh
+    }).then(users => {
+        if(users.length == 0)
+            return Promise.reject(
+                "No users with that name found! Make sure the user's name in JIRA and Github are the same.");
+
+        return users[0];
     });
 };
 
+var approvedByField = "customfield_11204";
 var addApproverCommand = name => ({
     update: {
-        customfield_11204: [{
+        [approvedByField]: [{
             add: { name }
         }]
     }});
 
-
-var addApproverTo = issueKey => users => {
-    if(users.length == 0) {
-        console.log("No users with that name found! Make sure the user's name in JIRA and Github are the same.");
-        return Promise.reject();
-    }
-
-    var username = users[0].name;
+var addApproverTo = issueKey => user => {
+    var username = user.name;
 
     console.log(`Adding ${username} as an approver of ${issueKey} on JIRA...`);
     return request.put({
@@ -100,10 +106,13 @@ var addApproverTo = issueKey => users => {
         json: true,
         auth: secretSecretJiraCredsShh,
         body: addApproverCommand(username)
-    }).catch(err => {
-        console.log(err);
-    }).then(() => issueKey);
+    }).catch(err =>
+        Promise.reject(err.response.body.errorMessages)
+    ).then(() => issueKey);
 };
+
+const issueUrl = issue =>
+    `https://massexchange.atlassian.net/browse/${issue.key}`;
 
 const lookupJiraIssue = issueKey => {
     console.log(`Looking up ${issueKey} on JIRA...`);
@@ -111,17 +120,23 @@ const lookupJiraIssue = issueKey => {
         url: `${jiraAPI}/issue/${issueKey}`,
         json: true,
         auth: secretSecretJiraCredsShh
-    }).catch(err => {
-        console.log(err);
-    });
+    }).catch(err =>
+        Promise.reject(err.response.body.errorMessages));
 };
 
 const hipchatRoom = "Development";
-const notifyHipchat = issue => {
+
+const approvalMessage = (approver, approval, issue) =>
+    `${approver.name} just approved <a href="${approval.review.html_url}">${approval.pull_request.title}</a>
+(<a href="${issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>)`;
+
+const notifyHipchat = (approver, approval) => issue => {
     console.log("Notifying Hipchat...");
+
+    const message = approvalMessage(approver, approval, issue);
     return new Promise((resolve, reject) =>
         hipchat.notify(hipchatRoom, {
-            message: `I just approved <a href="https://massexchange.atlassian.net/browse/${issue.key}"> [${issue.key}] - ${issue.fields.summary}</a>`,
+            message,
             color: "green",
             token: nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"),
             notify: true
