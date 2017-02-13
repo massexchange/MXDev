@@ -42,10 +42,8 @@ var handleGithubWebhook = event => {
     const reviewer = event.sender.login;
 
     console.log(`${reviewer} reviewed Github PR for ${issueKey}!`);
-    if(event.review.state != "approved") {
-        console.log("Was not an approval, too bad.");
-        return;
-    }
+    if(event.review.state != "approved")
+        return Promise.resolve("Was not an approval, too bad.");
 
     return findGithubUserName(reviewer).then(user =>
         findJiraUsername(user)
