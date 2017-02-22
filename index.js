@@ -1,10 +1,10 @@
 const
     nconf = require("nconf"),
 
-    Github = require("./github"),
+    Github = require("./api/github"),
 
-    handleReview = require("./review"),
-    handleComment = require("./comment");
+    handleReview = require("./routes/review"),
+    handleComment = require("./routes/comment");
 
 nconf.env("_");
 

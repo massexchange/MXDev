@@ -2,9 +2,9 @@ const
     Promise = require("bluebird"),
     nconf = require("nconf"),
 
-    Github = require("./github"),
-    JIRA = require("./jira"),
-    Hipchat = require("./hipchat");
+    Github = require("../api/github"),
+    JIRA = require("../api/jira"),
+    Hipchat = require("../api/hipchat");
 
 nconf.env("_");
 
