@@ -1,14 +1,16 @@
+"use strict";
+
 const Hipchatter = require("hipchatter");
 
 const hipchatRoom = "Development";
 
 class Hipchat {
-    constructor(token, mock = false) {
+    constructor(token, mock) {
         this.api = new Hipchatter();
         this.token = token;
-        this.mock = mock;
+        this.mock = !!mock;
     }
-    notify(message, color = "green") {
+    notify(message, color) {
         console.log("Notifying Hipchat...");
 
         if(this.mock)
@@ -17,7 +19,7 @@ class Hipchat {
         return new Promise((resolve, reject) =>
             this.api.notify(hipchatRoom, {
                 message,
-                color: color,
+                color: color || "green",
                 token: this.token,
                 notify: true
             }, err => {

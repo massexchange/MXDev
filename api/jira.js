@@ -1,3 +1,5 @@
+"use strict";
+
 const request = require("request-promise");
 
 const jiraAPI = "https://massexchange.atlassian.net/rest/api/2";

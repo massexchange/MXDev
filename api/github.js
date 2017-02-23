@@ -1,3 +1,5 @@
+"use strict";
+
 const
     GitHubApi = require("github"),
     Promise = require("bluebird");
