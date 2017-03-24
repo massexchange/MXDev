@@ -51,9 +51,10 @@ class JIRA {
             json: true,
             auth: this.creds,
             body: addApproverCommand(user.name)
-        }).catch(err =>
-            Promise.reject(err.response.body.errorMessages)
-        ).then(() => issueKey);
+        }).catch(err => {
+            console.log("Issue not found! Check the branch name.");
+            Promise.resolve();
+        }).then(() => issueKey);
     }
     addTester(user, issueKey) {
         console.log(`Setting ${user.name} as the tester of ${issueKey} on JIRA...`);
