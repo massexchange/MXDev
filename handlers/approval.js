@@ -1,7 +1,4 @@
-"use strict";
-
 const
-    Promise = require("bluebird"),
     nconf = require("nconf"),
 
     Github = require("../api/github"),
@@ -32,13 +29,8 @@ const approvalMessage = (user, approval, issue) =>
 `${user.name} just approved <a href="${approval.review.html_url}">${approval.pull_request.title}</a>
 for issue <a href="${JIRA.issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>`;
 
-module.exports = event => {
-    console.log(`${event.sender.login} reviewed Github PR for ${event.pull_request.head.ref}!`);
-
-    if(event.review.state != "approved") {
-        console.log("Was not an approval, too bad.");
-        return Promise.resolve();
-    }
-
-    return handleApproval(event);
+module.exports = {
+    matches: event => event.review.state != "approved",
+    handle: handleApproval,
+    irrelevantMessage: "Was not an approval, too bad."
 };

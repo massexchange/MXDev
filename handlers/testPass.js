@@ -1,5 +1,3 @@
-"use strict";
-
 const
     Promise = require("bluebird"),
     nconf = require("nconf"),
@@ -51,7 +49,6 @@ const testResults = {
     Fail: false
 };
 const parseComment = comment => {
-    console.log(`Parsing comment ${comment}`);
     const match = testResultPattern.exec(comment);
     if(!match) {
         console.log("Comment was not related to testing.");
@@ -61,12 +58,13 @@ const parseComment = comment => {
     return Promise.resolve(testResults[match[1]]);
 };
 
-module.exports = event => {
-    if(["created", "edited"].indexOf(event.action) < 0) {
-        console.log("Don't care about comment deletions.");
-        return Promise.resolve();
-    }
-
+const handler = event => {
     return parseComment(event.comment.body)
         .then(handleTestResult(event));
+};
+
+module.exports = {
+    matches: event => ["created", "edited"].indexOf(event.action) < 0,
+    handle: handler,
+    irrelevantMessage: "Don't care about comment deletions."
 };
