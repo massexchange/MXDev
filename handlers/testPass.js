@@ -16,15 +16,16 @@ const github = new Github(
 
 const jira = new JIRA(nconf.get("JIRA"));
 
-const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
+const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"), true);
 
-const handleTestResult = (event, testPassed) => {
+const handleTestResult = event => testPassed => {
     if(!testPassed) {
         console.log("Test was a fail, 2bad so sad.");
         return Promise.resolve();
     }
 
-    const issueBranchP = github.findIssueBranch(event.issue, event.repo)
+    console.log("Registering test pass...");
+    const issueBranchP = github.findIssueBranch(event.issue.number, event.repo)
         .catch(err => console.log(err));
 
     return github.findUser(event.user)
@@ -42,7 +43,7 @@ const handleTestResult = (event, testPassed) => {
 };
 
 const testPassMessage = (user, event, issue) =>
-`${user.name} just successfully tested <a href="${event.comment.html_url}">${event.issue.title}</a>
+`${user.name} just successfully tested <a href="${event.url}">${event.issue.name}</a>
 for issue <a href="${JIRA.issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>`;
 
 const testResultPattern = /\[Test: (Pass|Fail)\]/;
@@ -51,6 +52,7 @@ const testResults = {
     Fail: false
 };
 const parseComment = comment => {
+    console.log("Parsing comment...");
     const match = testResultPattern.exec(comment);
     if(!match) {
         console.log("Comment was not related to testing.");
@@ -67,6 +69,7 @@ const handler = event => {
 
 module.exports = {
     matches: event => ["created", "edited"].includes(event.action),
+    name: "TestPass",
     accepts: CommentEvent,
     handle: handler,
     irrelevantMessage: "Don't care about comment deletions."

@@ -13,7 +13,9 @@ const Event = require("../event");
         - owner
 */
 module.exports = class ReviewEvent extends Event {
-    constructor(user, pullRequest, state, url) {
+    constructor(trigger, user, pullRequest, state, url) {
+        super(trigger);
+
         this.user = user;
         this.pullRequest = pullRequest;
         this.state = state;

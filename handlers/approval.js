@@ -5,7 +5,7 @@ const
     JIRA = require("../api/jira"),
     Hipchat = require("../api/hipchat"),
 
-    ApprovalEvent = require("../events/approval");
+    ReviewEvent = require("../events/review");
 
 nconf.env("_");
 
@@ -17,15 +17,19 @@ const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const handleApproval = event =>
-    github.findUser(event.user).then(githubUser =>
-        jira.findUsername(githubUser)
+const handleApproval = event => {
+    console.log("Registering approval...");
+
+    return github.findUser(event.user).then(githubUser => {
+        return jira.findUsername(githubUser)
             .then(user => jira.addApprover(user, event.branch))
             .then(() => jira.lookupIssue(event.branch))
             .then(issue => hipchat.notify(
                 approvalMessage(githubUser, event, issue)))
             .then(() =>
-                console.log("Done! (Probably)")));
+                console.log("Done! (Probably)"));
+    });
+};
 
 const approvalMessage = (user, approval, issue) =>
 `${user.name} just approved <a href="${approval.url}">${approval.pullRequest.title}</a>
@@ -33,7 +37,8 @@ for issue <a href="${JIRA.issueUrl(issue)}">[${issue.key}] - ${issue.fields.summ
 
 module.exports = {
     matches: event => event.state == "approved",
-    accepts: ApprovalEvent,
+    name: "Approval",
+    accepts: ReviewEvent,
     handle: handleApproval,
     irrelevantMessage: "Was not an approval, too bad."
 };

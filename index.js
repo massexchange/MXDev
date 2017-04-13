@@ -16,26 +16,33 @@ const
 
 nconf.env("_");
 
+const LOG = message => {
+    console.log(message);
+};
+
 const hooks = {
     review: reviewHook,
     comment: commentHook
 };
 var handleGithubWebhook = request => {
+    LOG("Received Github webhook!");
     const trigger = JSON.parse(request.body);
 
-    if(Github.isPingEvent(trigger))
+    if(Github.isPingEvent(trigger)) {
+        LOG("It's a ping, validating...");
         return Github.validatePing(trigger);
+    }
 
     const target = request.resource.split('/')[1];
     const hook = hooks[target];
 
-    console.log(`Hook triggered: ${target}`);
+    LOG(`Hook triggered: ${target}`);
 
     return hook.handle(trigger);
 };
 
 exports.handler = (event, context, callback) => {
-    console.log(JSON.stringify(event));
+    // console.log(JSON.stringify(event));
     handleGithubWebhook(event)
         .then(result =>
             callback(null, result))

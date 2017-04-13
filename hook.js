@@ -1,7 +1,7 @@
 const
     Promise = require("bluebird"),
 
-    Event = require("../event");
+    Event = require("./event");
 
 const parseTrigger = trigger =>
     new Event(trigger);
@@ -13,9 +13,15 @@ module.exports = class Hook {
         this.message = message;
     }
     handle(trigger) {
+        console.log("Parsing trigger...");
         console.log(this.message(trigger));
 
         const events = this.triggerParser(trigger);
+        console.log(`Found events: ${events.map(event =>
+            event.constructor.name)}`);
+
+        console.log(`Informing handlers: ${this.handlers.map(handler =>
+            handler.name)}`);
 
         return Promise.all(...events.map(event =>
             this.handlers

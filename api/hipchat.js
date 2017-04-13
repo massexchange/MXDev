@@ -5,10 +5,10 @@ const Hipchatter = require("hipchatter");
 const hipchatRoom = "Development";
 
 class Hipchat {
-    constructor(token, mock) {
+    constructor(token, mock = false) {
         this.api = new Hipchatter();
         this.token = token;
-        this.mock = !!mock;
+        this.mock = mock;
     }
     notify(message, color) {
         console.log("Notifying Hipchat...");

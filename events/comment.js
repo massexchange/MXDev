@@ -13,11 +13,14 @@ const Event = require("../event");
         - owner
 */
 module.exports = class CommentEvent extends Event {
-    constructor(user, body, issue, action, repo) {
+    constructor(trigger, user, body, action, issue, repo, url) {
+        super(trigger);
+
         this.user = user;
         this.body = body;
         this.issue = issue;
         this.action = action;
         this.repo = repo;
+        this.url = url;
     }
 };
