@@ -22,13 +22,13 @@ class Github {
         });
         this.losers = losers;
     }
-    findIssueBranch(event) {
+    findIssueBranch(issue, { owner, name: repo }) {
         console.log("Looking up issue branch...");
 
         return this.api.pullRequests.get({
-            owner: event.repository.owner.login,
-            repo: event.repository.name,
-            number: event.issue.number
+            owner,
+            repo,
+            number: issue
         }).then(pr => pr.head.ref);
     }
     findUser(username) {

@@ -4,7 +4,9 @@ const
 
     Github = require("../api/github"),
     JIRA = require("../api/jira"),
-    Hipchat = require("../api/hipchat");
+    Hipchat = require("../api/hipchat"),
+
+    CommentEvent = require("../events/comment");
 
 nconf.env("_");
 
@@ -16,16 +18,16 @@ const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const handleTestResult = event => testPassed => {
+const handleTestResult = (event, testPassed) => {
     if(!testPassed) {
         console.log("Test was a fail, 2bad so sad.");
         return Promise.resolve();
     }
 
-    const issueBranchP = github.findIssueBranch(event)
+    const issueBranchP = github.findIssueBranch(event.issue, event.repo)
         .catch(err => console.log(err));
 
-    return github.findUser(event.sender.login)
+    return github.findUser(event.user)
         .then(githubUser =>
             Promise.all([
                 jira.findUsername(githubUser),
@@ -59,12 +61,13 @@ const parseComment = comment => {
 };
 
 const handler = event => {
-    return parseComment(event.comment.body)
+    return parseComment(event.body)
         .then(handleTestResult(event));
 };
 
 module.exports = {
-    matches: event => ["created", "edited"].indexOf(event.action) < 0,
+    matches: event => ["created", "edited"].includes(event.action),
+    accepts: CommentEvent,
     handle: handler,
     irrelevantMessage: "Don't care about comment deletions."
 };

@@ -1,9 +1,9 @@
 "use strict";
 
 /*
-    A user does something
-    MXDev gets informed and directs to the appropriate TRIGGER
-    Depending on the event, it may require an ACTION
+    A user does something which TRIGGERS a HOOK
+    The HOOK parses the TRIGGER into EVENT(S)
+    HANDLERS are notified and can take ACTION(S)
 */
 
 const
@@ -11,27 +11,27 @@ const
 
     Github = require("./api/github"),
 
-    reviewTrigger = require("./triggers/review"),
-    commentTrigger = require("./triggers/comment");
+    reviewHook = require("./hooks/review"),
+    commentHook = require("./hooks/comment");
 
 nconf.env("_");
 
-const triggers = {
-    review: reviewTrigger,
-    comment: commentTrigger
+const hooks = {
+    review: reviewHook,
+    comment: commentHook
 };
 var handleGithubWebhook = request => {
-    const event = JSON.parse(request.body);
+    const trigger = JSON.parse(request.body);
 
-    if(Github.isPingEvent(event))
-        return Github.validatePing(event);
+    if(Github.isPingEvent(trigger))
+        return Github.validatePing(trigger);
 
     const target = request.resource.split('/')[1];
-    const trigger = triggers[target];
+    const hook = hooks[target];
 
-    console.log(`Trigger hit: ${target}`);
+    console.log(`Hook triggered: ${target}`);
 
-    return trigger.handle(event);
+    return hook.handle(trigger);
 };
 
 exports.handler = (event, context, callback) => {
