@@ -15,10 +15,13 @@ const parseReviewTrigger = trigger =>
     }) => {
         const events = [];
 
-        events.push(new CommentEvent(trigger, user.login, body, head.ref, {
+        events.push(new CommentEvent(trigger, user.login, body, "created", {
+            name: title,
+            branch: head.ref
+        }, {
             name,
             owner: owner.login
-        }));
+        }, html_url));
 
         events.push(new ReviewEvent(trigger, user.login, {
             branch: head.ref,

@@ -16,7 +16,7 @@ const github = new Github(
 
 const jira = new JIRA(nconf.get("JIRA"));
 
-const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"), true);
+const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
 const handleTestResult = event => testPassed => {
     if(!testPassed) {
@@ -25,8 +25,10 @@ const handleTestResult = event => testPassed => {
     }
 
     console.log("Registering test pass...");
-    const issueBranchP = github.findIssueBranch(event.issue.number, event.repo)
-        .catch(err => console.log(err));
+    const issueBranchP = event.issue.branch
+        ? Promise.resolve(event.issue.branch)
+        : github.findIssueBranch(event.issue.number, event.repo)
+            .catch(err => console.log(err));
 
     return github.findUser(event.user)
         .then(githubUser =>
