@@ -37,9 +37,7 @@ const handleTestResult = event => testPassed => {
                 jira.addTester(jiraUsername, issueKey)
                     .then(() => jira.lookupIssue(issueKey)))
             .then(jiraIssue => hipchat.notify(
-                testPassMessage(githubUser, event, jiraIssue)))
-            .then(() =>
-                console.log("Done! (Probably)")));
+                testPassMessage(githubUser, event, jiraIssue))));
 };
 
 const testPassMessage = (user, event, issue) =>

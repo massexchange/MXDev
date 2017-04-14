@@ -12,24 +12,41 @@ module.exports = class Hook {
         this.triggerParser = triggerParser;
         this.message = message;
     }
-    handle(trigger) {
+    trigger(trigger) {
         console.log("Parsing trigger...");
         console.log(this.message(trigger));
 
         const events = this.triggerParser(trigger);
         console.log(`Found events: ${events.map(event =>
-            event.constructor.name)}`);
+            event.constructor.name).join(", ")}`);
 
-        console.log(`Informing handlers: ${this.handlers.map(handler =>
-            handler.name)}`);
+        console.log(`Potential handlers: ${this.handlers.map(handler =>
+            handler.name).join(", ")}`);
 
-        return Promise.all(...events.map(event =>
-            this.handlers
-                .filter(handler =>
-                    event instanceof handler.accepts)
-                .filter(handler =>
-                    handler.matches(event))
-                .map(handler =>
-                    handler.handle(event))));
+        const promises = events.map(this.handle, this);
+
+        return Promise.all(promises).then(() => {
+            console.log("Trigger handled");
+        });
+    }
+    handle(event) {
+        const relevantHandlers = this.handlers
+            .filter(handler =>
+                event instanceof handler.accepts)
+            .filter(handler =>
+                handler.matches(event));
+
+        console.log(`${event.constructor.name}: ${relevantHandlers.length} handler(s)`);
+
+        const resultPs = relevantHandlers.map(handler =>
+            handler.handle(event).then(x => {
+                console.log(`Handler ${handler.name} is done with the ${event.constructor.name}`);
+                return x;
+            }));
+
+        return Promise.all(resultPs).then(x => {
+            console.log(`${event.constructor.name} handled`);
+            return x;
+        });
     }
 };

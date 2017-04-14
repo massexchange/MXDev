@@ -38,12 +38,11 @@ var handleGithubWebhook = request => {
 
     LOG(`Hook triggered: ${target}`);
 
-    return hook.handle(trigger);
+    return hook.trigger(trigger);
 };
 
 exports.handler = (event, context, callback) => {
-    // console.log(JSON.stringify(event));
-    handleGithubWebhook(event)
+    return handleGithubWebhook(event)
         .then(result =>
             callback(null, result))
         .catch(callback);

@@ -20,15 +20,14 @@ const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 const handleApproval = event => {
     console.log("Registering approval...");
 
-    return github.findUser(event.user).then(githubUser => {
-        return jira.findUsername(githubUser)
-            .then(user => jira.addApprover(user, event.branch))
-            .then(() => jira.lookupIssue(event.branch))
+    return github.findUser(event.user).then(githubUser =>
+        jira.findUsername(githubUser)
+            .then(user => jira.addApprover(user, event.pullRequest.branch))
+            .then(() => jira.lookupIssue(event.pullRequest.branch))
             .then(issue => hipchat.notify(
-                approvalMessage(githubUser, event, issue)))
-            .then(() =>
-                console.log("Done! (Probably)"));
-    });
+                approvalMessage(githubUser, event, issue))))
+        .catch(err =>
+            console.log(`Error: ${err}`));
 };
 
 const approvalMessage = (user, approval, issue) =>
