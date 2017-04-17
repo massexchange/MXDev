@@ -12,7 +12,8 @@ const
     Github = require("./api/github"),
 
     reviewHook = require("./hooks/review"),
-    commentHook = require("./hooks/comment");
+    commentHook = require("./hooks/comment"),
+    releaseHook = require("./hooks/release");
 
 nconf.env("_");
 
@@ -22,7 +23,8 @@ const LOG = message => {
 
 const hooks = {
     review: reviewHook,
-    comment: commentHook
+    comment: commentHook,
+    release: releaseHook
 };
 var handleGithubWebhook = request => {
     LOG("Received Github webhook!");
