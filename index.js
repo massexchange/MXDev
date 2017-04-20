@@ -26,9 +26,11 @@ const hooks = {
     comment: commentHook,
     release: releaseHook
 };
-var handleGithubWebhook = request => {
-    LOG("Received Github webhook!");
-    const trigger = JSON.parse(request.body);
+var handleWebhook = request => {
+    LOG("Received webhook!");
+    const trigger = nconf.get("dev")
+        ? request.body
+        : JSON.parse(request.body);
 
     if(Github.isPingEvent(trigger)) {
         LOG("It's a ping, validating...");
@@ -44,7 +46,7 @@ var handleGithubWebhook = request => {
 };
 
 exports.handler = (event, context, callback) => {
-    return handleGithubWebhook(event)
+    return handleWebhook(event)
         .then(result =>
             callback(null, result))
         .catch(callback);
