@@ -1,28 +1,60 @@
 const
     nconf = require("nconf"),
+    Humanize = require("humanize-plus");
 
     JIRA = require("../api/jira"),
+    // JiraApi = require("jira-client"),
     Hipchat = require("../api/hipchat"),
 
     ReleaseEvent = require("../events/release");
 
 nconf.env("_");
 
-const jira = new JIRA(nconf.get("JIRA"));
+const { username, password } = jiraCreds = nconf.get("JIRA");
 
-const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
+const jira = new JIRA(jiraCreds);
+// const JIRA = new JiraApi({
+//   protocol: "https",
+//   host: "jira.somehost.com",
+//   username, password,
+//   apiVersion: "2",
+//   strictSSL: true
+// });
 
-const handleRelease = ({ name, dates: { start, end } }) => {
-    console.log("Generating release notes...");
+const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:ANNOUNCEMENTS:TOKEN"), true);
 
-    console.log(`MX Version ${name} | ${start}-${end}`);
+const releaseNotes = ({ name, dates: { start, end } }) =>
+    `MX Version ${name} | ${start}-${end}`;
 
-    return Promise.resolve();
+const handleRelease = release => {
+    console.log("Fetching release issues...")
+    return jira.search(`fixVersion = ${release.name}`, "summary", "key", "issuetype")
+        .then(({ issues }) => {
+            console.log(`Found ${issues.length} issues`);
+
+            console.log("Generating release notes...");
+            const notes = releaseNotes(release, issues);
+
+            const types = issues.reduce((types, issue) => {
+                const type = issue.fields.issuetype.name;
+                if(!types[type])
+                    types[type] = 0;
+
+                types[type]++;
+
+                return types;
+            }, {});
+            console.log(notes);
+
+            return hipchat.notify(
+                releaseMessage(release, issues, types), "announce");
+        });
 };
 
-const approvalMessage = (user, approval, issue) =>
-`${user.name} just approved <a href="${approval.url}">${approval.pullRequest.title}</a>
-for issue <a href="${JIRA.issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>`;
+const releaseMessage = ({ name }, issues, types) =>
+    `MX v${name} has just been released! It included ${
+        Humanize.oxford(Object.keys(types).map(key =>
+            `${types[key]} ${Humanize.pluralize(types[key], key)}`))}`;
 
 module.exports = {
     matches: event => true,

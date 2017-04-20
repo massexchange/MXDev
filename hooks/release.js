@@ -15,5 +15,5 @@ const parseReleaseTrigger = trigger =>
         return events;
     })(trigger);
 
-module.exports = new Hook([releaseHandler], parseReleaseTrigger, ({ name }) =>
+module.exports = new Hook([releaseHandler], parseReleaseTrigger, ({ version: { name } }) =>
     `Version ${name} was just released!`);

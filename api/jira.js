@@ -81,6 +81,16 @@ class JIRA {
     static issueUrl(issue) {
         return `https://massexchange.atlassian.net/browse/${issue.key}`;
     }
+    search(jql, ...fields) {
+        return request.post({
+            url: `${jiraAPI}/search`,
+            json: true,
+            auth: this.creds,
+            body: { jql, fields },
+            maxResults: 100,
+            fieldsByKeys: true
+        });
+    }
 }
 
 module.exports = JIRA;
