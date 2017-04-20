@@ -1,6 +1,6 @@
 const
     nconf = require("nconf"),
-    Humanize = require("humanize-plus");
+    Humanize = require("humanize-plus"),
 
     JIRA = require("../api/jira"),
     // JiraApi = require("jira-client"),
@@ -23,8 +23,10 @@ const jira = new JIRA(jiraCreds);
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:ANNOUNCEMENTS:TOKEN"), true);
 
+const format = "MMMM Do";
+
 const releaseNotes = ({ name, dates: { start, end } }) =>
-    `MX Version ${name} | ${start}-${end}`;
+    `MX Version ${name} | ${start.format(format)}-${end.format(format)}`;
 
 const handleRelease = release => {
     console.log("Fetching release issues...")
@@ -34,6 +36,8 @@ const handleRelease = release => {
 
             console.log("Generating release notes...");
             const notes = releaseNotes(release, issues);
+
+            const releaseDuration = release.dates.end.diff(release.dates.start, "days");
 
             const types = issues.reduce((types, issue) => {
                 const type = issue.fields.issuetype.name;
@@ -47,14 +51,14 @@ const handleRelease = release => {
             console.log(notes);
 
             return hipchat.notify(
-                releaseMessage(release, issues, types), "announce");
+                releaseMessage(release, issues, types, releaseDuration), "announce");
         });
 };
 
-const releaseMessage = ({ name }, issues, types) =>
-    `MX v${name} has just been released! It included ${
+const releaseMessage = ({ name }, issues, types, days) =>
+    `MX v${name} has just been released! It took us ${days} ${Humanize.pluralize(days, "day")} and included ${
         Humanize.oxford(Object.keys(types).map(key =>
-            `${types[key]} ${Humanize.pluralize(types[key], key)}`))}`;
+            `${types[key]} ${Humanize.pluralize(types[key], key)}`))}.`;
 
 module.exports = {
     matches: event => true,
