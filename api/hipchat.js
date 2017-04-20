@@ -2,7 +2,10 @@
 
 const Hipchatter = require("hipchatter");
 
-const hipchatRoom = "Development";
+const rooms = {
+    dev: "Development",
+    announce: "Announcements"
+};
 
 class Hipchat {
     constructor(token, mock = false) {
@@ -10,14 +13,16 @@ class Hipchat {
         this.token = token;
         this.mock = mock;
     }
-    notify(message, color) {
+    notify(message, color, room = "dev") {
         console.log("Notifying Hipchat...");
 
+        const roomName = rooms[room];
+
         if(this.mock)
-            return mockNotify(message);
+            return mockNotify(message, roomName);
 
         return new Promise((resolve, reject) =>
-            this.api.notify(hipchatRoom, {
+            this.api.notify(roomName, {
                 message,
                 color: color || "green",
                 token: this.token,
@@ -31,8 +36,13 @@ class Hipchat {
     }
 }
 
-const mockNotify = message => {
-    console.log(message);
+const divider = "-------------------------------";
+
+const mockNotify = (message, room) => {
+    console.log(`To room ${room}:
+${divider}
+${message}
+${divider}`);
     return Promise.resolve();
 };
 
