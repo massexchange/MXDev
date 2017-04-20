@@ -8,6 +8,9 @@ const pullRequestReviewEvent = "pull_request_review";
 
 class Github {
     constructor(token, losers) {
+        if(!token)
+            throw new Error("Github API token must be defined!");
+
         this.api = new GitHubApi({
             protocol: "https",
             headers: {
