@@ -91,6 +91,13 @@ class JIRA {
             fieldsByKeys: true
         });
     }
+    getProject(id) {
+        return request.get({
+            url: `${jiraAPI}/project/${id}`,
+            json: true,
+            auth: this.creds
+        });
+    }
 }
 
 module.exports = JIRA;

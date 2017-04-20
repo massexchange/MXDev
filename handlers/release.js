@@ -1,6 +1,7 @@
 const
     nconf = require("nconf"),
     Humanize = require("humanize-plus"),
+    Promise = require("bluebird"),
 
     JIRA = require("../api/jira"),
     // JiraApi = require("jira-client"),
@@ -30,8 +31,14 @@ const releaseNotes = ({ name, dates: { start, end } }) =>
 
 const handleRelease = release => {
     console.log("Fetching release issues...")
-    return jira.search(`fixVersion = ${release.name}`, "summary", "key", "issuetype")
-        .then(({ issues }) => {
+    const issueP = jira.search(`fixVersion = ${release.name}`,
+        "summary", "key", "issuetype");
+
+    const projectP = jira.getProject(release.project.id);
+
+    return Promise.all([issueP, projectP]).spread(({ issues }, { name: projectName }) => {
+            release.project.name = projectName;
+
             console.log(`Found ${issues.length} issues`);
 
             console.log("Generating release notes...");
@@ -55,8 +62,8 @@ const handleRelease = release => {
         });
 };
 
-const releaseMessage = ({ name }, issues, types, days) =>
-    `MX v${name} has just been released! It took us ${days} ${Humanize.pluralize(days, "day")} and included ${
+const releaseMessage = ({ name, project }, issues, types, days) =>
+    `MX${project.name} v${name} has just been released! It took us ${days} ${Humanize.pluralize(days, "day")} and included ${
         Humanize.oxford(Object.keys(types).map(key =>
             `${types[key]} ${Humanize.pluralize(types[key], key)}`))}.`;
 

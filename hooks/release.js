@@ -10,13 +10,13 @@ const format = "DD/MMM/YY";
 
 const parseReleaseTrigger = trigger =>
     (({ version: {
-        id, name, userStartDate, userReleaseDate
+        id, name, userStartDate, userReleaseDate, projectId
     }}) => {
         const events = [];
 
         events.push(new ReleaseEvent(trigger, id, name,
             moment(userStartDate, format),
-            moment(userReleaseDate, format)));
+            moment(userReleaseDate, format), projectId));
 
         return events;
     })(trigger);
