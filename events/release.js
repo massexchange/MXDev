@@ -13,11 +13,12 @@ const Event = require("../event");
         - owner
 */
 module.exports = class ReleaseEvent extends Event {
-    constructor(trigger, id, name, startDate, releaseDate, projectId) {
+    constructor(trigger, id, name, description, startDate, releaseDate, projectId) {
         super(trigger);
 
         this.id = id;
         this.name = name;
+        this.description = description;
         this.dates = {
             start: startDate,
             end: releaseDate

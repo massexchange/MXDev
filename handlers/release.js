@@ -24,11 +24,6 @@ const jira = new JIRA(jiraCreds);
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:ANNOUNCEMENTS:TOKEN"), true);
 
-const format = "MMMM Do";
-
-const releaseNotes = ({ name, dates: { start, end } }) =>
-    `MX Version ${name} | ${start.format(format)}-${end.format(format)}`;
-
 const handleRelease = release => {
     console.log("Fetching release issues...")
     const issueP = jira.search(`fixVersion = ${release.name}`,
@@ -37,24 +32,22 @@ const handleRelease = release => {
     const projectP = jira.getProject(release.project.id);
 
     return Promise.all([issueP, projectP]).spread(({ issues }, { name: projectName }) => {
-            release.project.name = projectName;
+        release.project.name = projectName;
 
-            console.log(`Found ${issues.length} issues`);
+        console.log(`Found ${issues.length} issues`);
 
-            console.log("Generating release notes...");
-            const notes = releaseNotes(release, issues);
+        console.log("Generating release notes...");
+        const releaseDuration = release.dates.end.diff(release.dates.start, "days");
+        const issueTypes = processIssues(issues);
 
-            const releaseDuration = release.dates.end.diff(release.dates.start, "days");
+        const header = releaseHeader(release, issues);
+        const summary = releaseSummary(release, issues, issueTypes, releaseDuration);
+        const list = issueList(issueTypes);
 
-            console.log(notes);
+        const notes = releaseNotes(header, summary, release.description, list);
 
-            const issueTypes = processIssues(issues);
-
-            console.log(issueList(issueTypes));
-
-            return hipchat.notify(
-                releaseMessage(release, issues, types, releaseDuration), "announce");
-        });
+        return hipchat.notify(notes, { room: "announce" });
+    });
 };
 
 const processIssues = issues => {
@@ -69,6 +62,23 @@ const processIssues = issues => {
     }, {});
 };
 
+const format = "MMMM Do";
+
+const releaseHeader = ({ name, dates: { start, end } }) =>
+    `## MX Version ${name} | ${start.format(format)}-${end.format(format)}`;
+
+const releaseNotes = (header, summary, description, list) =>
+`${header}
+
+${summary}
+
+## Highlights
+${description}
+
+## Issues
+${list}
+`;
+
 const issueTypeList = (type, issues) =>
 `### ${type}
 ${issues.map(issue =>
@@ -78,10 +88,10 @@ const issueList = issueTypes =>
     Object.keys(issueTypes).map(type =>
         issueTypeList(type, issueTypes[type])).join('\n\n');
 
-const releaseHeader = ({ name, project }, issues, types, days) =>
+const releaseSummary = ({ name, project }, issues, types, days) =>
     `MX${project.name} v${name} has just been released! It took us ${days} ${Humanize.pluralize(days, "day")} and included ${
         Humanize.oxford(Object.keys(types).map(key =>
-            `${types[key]} ${Humanize.pluralize(types[key], key)}`))}.`;
+            `${types[key].length} ${Humanize.pluralize(types[key].length, key)}`))}.`;
 
 module.exports = {
     matches: event => true,
