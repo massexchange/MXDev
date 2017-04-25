@@ -13,7 +13,7 @@ class Hipchat {
         this.token = token;
         this.mock = mock;
     }
-    notify(message, color, room = "dev") {
+    notify(message, { color = "green", room = "dev" }) {
         console.log("Notifying Hipchat...");
 
         const roomName = rooms[room];
@@ -24,7 +24,7 @@ class Hipchat {
         return new Promise((resolve, reject) =>
             this.api.notify(roomName, {
                 message,
-                color: color || "green",
+                color: color,
                 token: this.token,
                 notify: true
             }, err => {
