@@ -46,23 +46,39 @@ const handleRelease = release => {
 
             const releaseDuration = release.dates.end.diff(release.dates.start, "days");
 
-            const types = issues.reduce((types, issue) => {
-                const type = issue.fields.issuetype.name;
-                if(!types[type])
-                    types[type] = 0;
-
-                types[type]++;
-
-                return types;
-            }, {});
             console.log(notes);
+
+            const issueTypes = processIssues(issues);
+
+            console.log(issueList(issueTypes));
 
             return hipchat.notify(
                 releaseMessage(release, issues, types, releaseDuration), "announce");
         });
 };
 
-const releaseMessage = ({ name, project }, issues, types, days) =>
+const processIssues = issues => {
+    return issues.reduce((types, issue) => {
+        const type = issue.fields.issuetype.name;
+        if(!types[type])
+            types[type] = [];
+
+        types[type].push(issue);
+
+        return types;
+    }, {});
+};
+
+const issueTypeList = (type, issues) =>
+`### ${type}
+${issues.map(issue =>
+`   - [${issue.key}] ${issue.fields.summary}`).join('\n')}`;
+
+const issueList = issueTypes =>
+    Object.keys(issueTypes).map(type =>
+        issueTypeList(type, issueTypes[type])).join('\n\n');
+
+const releaseHeader = ({ name, project }, issues, types, days) =>
     `MX${project.name} v${name} has just been released! It took us ${days} ${Humanize.pluralize(days, "day")} and included ${
         Humanize.oxford(Object.keys(types).map(key =>
             `${types[key]} ${Humanize.pluralize(types[key], key)}`))}.`;
