@@ -1,11 +1,29 @@
 "use strict";
 
-const Hipchatter = require("hipchatter");
+const
+    Hipchatter = require("hipchatter"),
+    marked = require("marked");
 
 const rooms = {
     dev: "Development",
     announce: "Announcements"
 };
+
+const hipchatRenderer = new marked.Renderer();
+
+hipchatRenderer.heading = (text, level) =>
+    `<strong>${text}</strong>
+
+`;
+
+marked.setOptions({
+    renderer: hipchatRenderer,
+    gfm: true,
+    tables: false,
+    breaks: true,
+    sanitize: true,
+    smartypants: true
+});
 
 class Hipchat {
     constructor(token, mock = false) {
@@ -18,12 +36,14 @@ class Hipchat {
 
         const roomName = rooms[room];
 
+        const renderedMessage = marked(message);
+
         if(this.mock)
-            return mockNotify(message, roomName);
+            return mockNotify(renderedMessage, roomName);
 
         return new Promise((resolve, reject) =>
             this.api.notify(roomName, {
-                message,
+                message: renderedMessage,
                 color: color,
                 token: this.token,
                 notify: true

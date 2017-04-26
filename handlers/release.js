@@ -40,13 +40,15 @@ const handleRelease = release => {
         const releaseDuration = release.dates.end.diff(release.dates.start, "days");
         const issueTypes = processIssues(issues);
 
-        const header = releaseHeader(release, issues);
+        const header = releaseHeader(release, issues.length);
         const summary = releaseSummary(release, issues, issueTypes, releaseDuration);
         const list = issueList(issueTypes);
 
-        const notes = releaseNotes(header, summary, release.description, list);
+        const short = shortNotes(header, summary, release.description);
 
-        return hipchat.notify(notes, { room: "announce" });
+        const notes = releaseNotes(short, list);
+
+        return hipchat.notify(short, { room: "announce" });
     });
 };
 
@@ -64,20 +66,25 @@ const processIssues = issues => {
 
 const format = "MMMM Do";
 
-const releaseHeader = ({ name, dates: { start, end } }) =>
-    `## MX Version ${name} | ${start.format(format)}-${end.format(format)}`;
+const releaseHeader = ({ name, dates: { start, end } }, numIssues) =>
+    `## MX Version ${name} | ${start.format(format)}-${end.format(format)} | ${numIssues} ${
+        Humanize.pluralize(numIssues, "issue")}`;
 
-const releaseNotes = (header, summary, description, list) =>
+const shortNotes = (header, summary, description) =>
 `${header}
+
 
 ${summary}
 
+
 ## Highlights
-${description}
+${description}`;
+
+const releaseNotes = (shortNotes, list) =>
+`${shortNotes}
 
 ## Issues
-${list}
-`;
+${list}`;
 
 const issueTypeList = (type, issues) =>
 `### ${type}
