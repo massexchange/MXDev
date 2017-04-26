@@ -4,6 +4,7 @@ const
     Promise = require("bluebird"),
 
     JIRA = require("../api/jira"),
+    Confluence = require("../api/confluence"),
     // JiraApi = require("jira-client"),
     Hipchat = require("../api/hipchat"),
 
@@ -14,6 +15,7 @@ nconf.env("_");
 const { username, password } = jiraCreds = nconf.get("JIRA");
 
 const jira = new JIRA(jiraCreds);
+const confluence = new Confluence(jiraCreds);
 // const JIRA = new JiraApi({
 //   protocol: "https",
 //   host: "jira.somehost.com",
