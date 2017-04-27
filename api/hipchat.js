@@ -16,14 +16,14 @@ hipchatRenderer.heading = (text, level) =>
 
 `;
 
-marked.setOptions({
+const markedOptions = {
     renderer: hipchatRenderer,
     gfm: true,
     tables: false,
     breaks: true,
     sanitize: true,
     smartypants: true
-});
+};
 
 class Hipchat {
     constructor(token, mock = false) {
@@ -36,7 +36,7 @@ class Hipchat {
 
         const roomName = rooms[room];
 
-        const renderedMessage = marked(message);
+        const renderedMessage = marked(message, markedOptions);
 
         if(this.mock)
             return mockNotify(renderedMessage, roomName);

@@ -12,10 +12,14 @@ const
 
 nconf.env("_");
 
-const { username, password } = jiraCreds = nconf.get("JIRA");
+const engineeringSpace = "ENG";
+
+const { user: username, pass: password } = jiraCreds = nconf.get("JIRA");
 
 const jira = new JIRA(jiraCreds);
-const confluence = new Confluence(jiraCreds);
+const confluence = new Confluence({
+    username, password
+});
 // const JIRA = new JiraApi({
 //   protocol: "https",
 //   host: "jira.somehost.com",
@@ -50,7 +54,13 @@ const handleRelease = release => {
 
         const notes = releaseNotes(short, list);
 
-        return hipchat.notify(short, { room: "announce" });
+        const confluenceP = confluence.getPage(engineeringSpace, "Versions")
+            .then(versionsHome =>
+                confluence.addPage(versionsHome, `v${release.name}`, notes));
+
+        const hipchatP = hipchat.notify(short, { room: "announce" });
+
+        return Promise.all([confluenceP, hipchatP]);
     });
 };
 
@@ -68,19 +78,19 @@ const processIssues = issues => {
 
 const format = "MMMM Do";
 
-const releaseHeader = ({ name, dates: { start, end } }, numIssues) =>
-    `## MX Version ${name} | ${start.format(format)}-${end.format(format)} | ${numIssues} ${
+const releaseHeader = ({ name, project, dates: { start, end } }, numIssues) =>
+    `# MX${project.name} Version ${name} | ${start.format(format)}-${end.format(format)} | ${numIssues} ${
         Humanize.pluralize(numIssues, "issue")}`;
 
 const shortNotes = (header, summary, description) =>
 `${header}
 
-
 ${summary}
 
-
-## Highlights
-${description}`;
+${description
+? `## Highlights
+${description}`
+: ""}`;
 
 const releaseNotes = (shortNotes, list) =>
 `${shortNotes}
@@ -91,7 +101,7 @@ ${list}`;
 const issueTypeList = (type, issues) =>
 `### ${type}
 ${issues.map(issue =>
-`   - [${issue.key}] ${issue.fields.summary}`).join('\n')}`;
+`   - [[${issue.key}](${JIRA.issueUrl(issue)})] ${issue.fields.summary}`).join('\n')}`;
 
 const issueList = issueTypes =>
     Object.keys(issueTypes).map(type =>

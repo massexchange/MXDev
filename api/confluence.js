@@ -1,36 +1,30 @@
 const
-    m2c = require("markdown2confluence-cws"),
     ConfluenceApi = require("confluence-api"),
+    marked = require("marked"),
 
     Promise = require("bluebird");
 
-const engineeringSpace = "ENG";
+const markedOptions = {
+    gfm: true,
+    tables: false,
+    breaks: true,
+    sanitize: true,
+    smartypants: true
+};
 
-const parsePage = ({ id, space: { key }, title, body, _links: { base, webui } }) => ({
+const parsePage = ({ id, title, body, _links: { base, webui } }) => ({
     id,
-    space: key,
     title,
     content: body.storage.value,
     url: base + webui
 });
-
-// console.log("Converting...");
-// const converted = m2c(input, {
-//     linkRewrite: href => {
-//         return href;
-//     },
-// });
-//
-// console.log(converted);
-//
-// console.log("Done!");
 
 const handleErr = err => {
     const message = JSON.stringify(JSON.parse(err.response.text).message);
     return Promise.reject(new Error(message, err));
 };
 
-return class Confluence {
+class Confluence {
     constructor({ username, password }) {
         this.api = Promise.promisifyAll(new ConfluenceApi({
             baseUrl: "https://massexchange.atlassian.net/wiki",
@@ -38,14 +32,28 @@ return class Confluence {
         }));
     }
     getPage(space, title) {
-        return this.api.getContentByPageTitle(space, title)
-            .then(({ results }) =>
-                parsePage(results[0]))
+        console.log(`Querying Confluence for ${space}/${title}...`);
+        return this.api.getContentByPageTitleAsync(space, title)
+            .then(({ results }) => {
+                const page = parsePage(results[0]);
+                page.space = space;
+                return page;
+            })
+            .tap(page =>
+                console.log("Got page!"))
             .catch(handleErr);
     }
     addPage(parentPage, title, content) {
-        return this.api.postContent(parentPage.space, title, content, parentPage.id)
+        console.log("Converting content...");
+        const converted = marked(content, markedOptions);
+
+        console.log(`Adding Confluence page ${parentPage.title}/${title}...`);
+        return this.api.postContentAsync(parentPage.space, title, converted, parentPage.id)
             .then(parsePage)
+            .tap(page =>
+                console.log("Page created!"))
             .catch(handleErr);
     }
-};
+}
+
+module.exports = Confluence;
