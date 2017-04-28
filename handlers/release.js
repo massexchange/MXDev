@@ -28,11 +28,11 @@ const confluence = new Confluence({
 //   strictSSL: true
 // });
 
-const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:ANNOUNCEMENTS:TOKEN"), true);
+const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:ANNOUNCEMENTS:TOKEN"));
 
 const handleRelease = release => {
     console.log("Fetching release issues...")
-    const issueP = jira.search(`fixVersion = ${release.name}`,
+    const issueP = jira.search(`fixVersion = ${release.name} and project = ${release.project.id}`,
         "summary", "key", "issuetype");
 
     const projectP = jira.getProject(release.project.id);
