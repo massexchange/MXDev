@@ -46,7 +46,9 @@ const handleRelease = release => {
         const releaseDuration = release.dates.end.diff(release.dates.start, "days");
         const issueTypes = processIssues(issues);
 
-        const header = releaseHeader(release, issues.length);
+        const versionName = `MX${projectName} v${release.name}`;
+
+        const header = releaseHeader(versionName, release, issues.length);
         const summary = releaseSummary(release, issues, issueTypes, releaseDuration);
         const list = issueList(issueTypes);
 
@@ -54,13 +56,12 @@ const handleRelease = release => {
 
         const notes = releaseNotes(short, list);
 
-        const confluenceP = confluence.getPage(engineeringSpace, "Versions")
+        return confluence.getPage(engineeringSpace, "Versions")
             .then(versionsHome =>
-                confluence.addPage(versionsHome, `v${release.name}`, notes));
-
-        const hipchatP = hipchat.notify(short, { room: "announce" });
-
-        return Promise.all([confluenceP, hipchatP]);
+                confluence.addPage(versionsHome, versionName, notes))
+            .then(versionPage =>
+                hipchat.notify(hipchatNotes(short, versionPage), {
+                    room: "announce" }));
     });
 };
 
@@ -78,8 +79,8 @@ const processIssues = issues => {
 
 const format = "MMMM Do";
 
-const releaseHeader = ({ name, project, dates: { start, end } }, numIssues) =>
-    `# MX${project.name} Version ${name} | ${start.format(format)}-${end.format(format)} | ${numIssues} ${
+const releaseHeader = (versionName, { name, project, dates: { start, end } }, numIssues) =>
+    `## ${versionName} | ${start.format(format)}-${end.format(format)} | ${numIssues} ${
         Humanize.pluralize(numIssues, "issue")}`;
 
 const shortNotes = (header, summary, description) =>
@@ -91,6 +92,11 @@ ${description
 ? `## Highlights
 ${description}`
 : ""}`;
+
+const hipchatNotes = (shortNotes, versionPage) =>
+`${shortNotes}
+
+[See issue list](${versionPage.url})`;
 
 const releaseNotes = (shortNotes, list) =>
 `${shortNotes}
