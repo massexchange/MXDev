@@ -43,7 +43,7 @@ const handleRelease = release => {
         console.log(`Found ${issues.length} issues`);
 
         console.log("Generating release notes...");
-        const releaseDuration = release.dates.end.diff(release.dates.start, "days");
+        const releaseDuration = release.dates.end.diff(release.dates.start, "days") + 1;
         const issueTypes = processIssues(issues);
 
         const versionName = `MX${projectName} v${release.name}`;
