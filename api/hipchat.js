@@ -31,7 +31,7 @@ class Hipchat {
         this.token = token;
         this.mock = mock;
     }
-    notify(message, { color = "green", room = "dev" }) {
+    notify(message, { color = "green", room = "dev" } = {}) {
         console.log("Notifying Hipchat...");
 
         const roomName = rooms[room];
