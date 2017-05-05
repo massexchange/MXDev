@@ -26,7 +26,7 @@ const hooks = {
     comment: commentHook,
     release: releaseHook
 };
-var handleWebhook = request => {
+const handleWebhook = request => {
     LOG("Received webhook!");
     const trigger = nconf.get("dev")
         ? request.body
@@ -46,8 +46,31 @@ var handleWebhook = request => {
 };
 
 exports.handler = (event, context, callback) => {
-    return handleWebhook(event)
-        .then(result =>
-            callback(null, result))
-        .catch(callback);
+    handleWebhook(event)
+        .then(result => {
+            console.log("Returning response:");
+
+            const response = {
+                statusCode: 200,
+                headers: {
+                    "Access-Control-Allow-Origin": "*"
+                },
+                body: JSON.stringify({
+                    result: "success"
+                })
+            };
+            console.log(response);
+
+            callback(null, response);
+        }).catch(err => {
+            const errorMessage = JSON.stringify(err);
+            console.log(`Error: ${errorMessage}`);
+            callback(null, {
+                statusCode: 500,
+                headers: {
+                    "Access-Control-Allow-Origin": "*"
+                },
+                body: errorMessage
+            });
+        });
 };
