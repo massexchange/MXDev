@@ -23,11 +23,9 @@ module.exports = class Hook {
         console.log(`Potential handlers: ${this.handlers.map(handler =>
             handler.name).join(", ")}`);
 
-        const promises = events.map(this.handle, this);
-
-        return Promise.all(promises).then(() => {
-            console.log("Trigger handled");
-        });
+        return Promise.all(events.map(this.handle, this))
+            .tap(() =>
+                console.log("Trigger handled"));
     }
     handle(event) {
         const relevantHandlers = this.handlers
@@ -39,14 +37,10 @@ module.exports = class Hook {
         console.log(`${event.constructor.name}: ${relevantHandlers.length} handler(s)`);
 
         const resultPs = relevantHandlers.map(handler =>
-            handler.handle(event).then(x => {
-                console.log(`Handler ${handler.name} is done with the ${event.constructor.name}`);
-                return x;
-            }));
+            handler.handle(event).tap(x =>
+                console.log(`Handler ${handler.name} is done with the ${event.constructor.name}`)));
 
-        return Promise.all(resultPs).then(x => {
-            console.log(`${event.constructor.name} handled`);
-            return x;
-        });
+        return Promise.all(resultPs).tap(x =>
+            console.log(`${event.constructor.name} handled`));
     }
 };
