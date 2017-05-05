@@ -6,6 +6,8 @@ const
     JIRA = require("../api/jira"),
     Hipchat = require("../api/hipchat"),
 
+    { link } = require("../util/markdown"),
+
     CommentEvent = require("../events/comment");
 
 nconf.env("_");
@@ -43,8 +45,8 @@ const handleTestResult = event => testPassed => {
 };
 
 const testPassMessage = (user, event, issue) =>
-`${user.name} just successfully tested <a href="${event.url}">${event.issue.name}</a>
-for issue <a href="${JIRA.issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>`;
+`${user.name} just successfully tested ${link(event.issue.name, event.url)}
+for issue ${link(`[${issue.key}] - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
 
 const testResultPattern = /\[Test: (Pass|Fail)\]/;
 const testResults = {

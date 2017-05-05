@@ -5,6 +5,8 @@ const
     JIRA = require("../api/jira"),
     Hipchat = require("../api/hipchat"),
 
+    { link } = require("../util/markdown"),
+
     ReviewEvent = require("../events/review");
 
 nconf.env("_");
@@ -25,14 +27,12 @@ const handleApproval = event => {
             .then(user => jira.addApprover(user, event.pullRequest.branch))
             .then(() => jira.lookupIssue(event.pullRequest.branch))
             .then(issue => hipchat.notify(
-                approvalMessage(githubUser, event, issue))))
-        .catch(err =>
-            console.log(`Error: ${err}`));
+                approvalMessage(githubUser, event, issue))));
 };
 
 const approvalMessage = (user, approval, issue) =>
-`${user.name} just approved <a href="${approval.url}">${approval.pullRequest.title}</a>
-for issue <a href="${JIRA.issueUrl(issue)}">[${issue.key}] - ${issue.fields.summary}</a>`;
+`${user.name} just approved ${link(approval.pullRequest.title, approval.url)}
+for issue ${link(`${issue.key} - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
 
 module.exports = {
     matches: event => event.state == "approved",
