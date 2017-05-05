@@ -45,8 +45,7 @@ const handleTestResult = event => testPassed => {
 };
 
 const testPassMessage = (user, event, issue) =>
-`${user.name} just successfully tested ${link(event.issue.name, event.url)}
-for issue ${link(`[${issue.key}] - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
+`${user.name} just successfully tested ${link(event.issue.name, event.url)} for issue ${link(`[${issue.key}] - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
 
 const testResultPattern = /\[Test: (Pass|Fail)\]/;
 const testResults = {

@@ -63,14 +63,15 @@ exports.handler = (event, context, callback) => {
 
             callback(null, response);
         }).catch(err => {
-            const errorMessage = JSON.stringify(err);
-            console.log(`Error: ${errorMessage}`);
+            console.log(`Error: ${err}`);
             callback(null, {
                 statusCode: 500,
                 headers: {
                     "Access-Control-Allow-Origin": "*"
                 },
-                body: errorMessage
+                body: JSON.stringify({
+                    error: err.message
+                })
             });
         });
 };

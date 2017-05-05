@@ -31,8 +31,7 @@ const handleApproval = event => {
 };
 
 const approvalMessage = (user, approval, issue) =>
-`${user.name} just approved ${link(approval.pullRequest.title, approval.url)}
-for issue ${link(`${issue.key} - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
+`${user.name} just approved ${link(approval.pullRequest.title, approval.url)} for issue ${link(`${issue.key} - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
 
 module.exports = {
     matches: event => event.state == "approved",

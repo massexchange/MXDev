@@ -1,5 +1,5 @@
 class MarkdownUtil {
-    link(text, url) {
+    static link(text, url) {
         return `[${text}](${url})`;
     }
 }
