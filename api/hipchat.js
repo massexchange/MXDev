@@ -2,7 +2,9 @@
 
 const
     Hipchatter = require("hipchatter"),
-    marked = require("marked");
+    marked = require("marked"),
+
+    nconf = require("nconf");
 
 const rooms = {
     dev: "Development",
@@ -26,10 +28,10 @@ const markedOptions = {
 };
 
 class Hipchat {
-    constructor(token, mock = false) {
+    constructor(token) {
         this.api = new Hipchatter();
         this.token = token;
-        this.mock = mock;
+        this.mock = nconf.get("HIPCHAT:DEBUG");
     }
     notify(message, { color = "green", room = "dev" } = {}) {
         console.log("Notifying Hipchat...");
