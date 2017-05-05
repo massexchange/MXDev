@@ -53,7 +53,7 @@ class JIRA {
             body: addApproverCommand(user.name)
         }).catch(err => {
             console.log("Issue not found! Check the branch name.");
-            Promise.resolve();
+            return Promise.resolve();
         }).then(() => issueKey);
     }
     addTester(user, issueKey) {
@@ -64,9 +64,9 @@ class JIRA {
             json: true,
             auth: this.creds,
             body: addTesterCommand(user.name)
-        }).catch(err =>
-            Promise.reject(err.response.body.errorMessages)
-        ).then(() => issueKey);
+        }).catch(err => {
+            throw err.response.body.errorMessages;
+        }).then(() => issueKey);
     }
     lookupIssue(issueKey) {
         console.log(`Looking up ${issueKey} on JIRA...`);
@@ -75,8 +75,9 @@ class JIRA {
             url: `${jiraAPI}/issue/${issueKey}`,
             json: true,
             auth: this.creds
-        }).catch(err =>
-            Promise.reject(err.response.body.errorMessages));
+        }).catch(err => {
+            throw err.response.body.errorMessages;
+        });
     }
     static issueUrl(issue) {
         return `https://massexchange.atlassian.net/browse/${issue.key}`;

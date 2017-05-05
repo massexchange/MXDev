@@ -66,9 +66,9 @@ const parseComment = comment => {
 
 const handler = event => {
     return parseComment(event.body)
+        .then(handleTestResult(event))
         //TODO: fix this later. handle different comment cases properly
-        .catch(() => Promise.resolve())
-        .then(handleTestResult(event));
+        .catch(() => Promise.resolve());
 };
 
 module.exports = {
