@@ -2,7 +2,7 @@ const
     Hook = require("../hook"),
     CommentEvent = require("../events/comment"),
 
-    testPassHandler = require("../handlers/testPass");
+    commentHandler = require("../handlers/comment");
 
 const parseCommentTrigger = trigger =>
     (({
@@ -24,5 +24,5 @@ const parseCommentTrigger = trigger =>
         return events;
     })(trigger);
 
-module.exports = new Hook([testPassHandler], parseCommentTrigger, ({ comment, issue, action }) =>
+module.exports = new Hook([commentHandler], parseCommentTrigger, ({ comment, issue, action }) =>
     `${comment.user.login} ${action} a comment on [${issue.title}]: ${comment.body}`);

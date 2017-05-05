@@ -64,12 +64,14 @@ const parseComment = comment => {
 
 const handler = event => {
     return parseComment(event.body)
+        //TODO: fix this later. handle different comment cases properly
+        .catch(() => Promise.resolve())
         .then(handleTestResult(event));
 };
 
 module.exports = {
     matches: event => ["created", "edited"].includes(event.action),
-    name: "TestPass",
+    name: "Comment",
     accepts: CommentEvent,
     handle: handler,
     irrelevantMessage: "Don't care about comment deletions."
