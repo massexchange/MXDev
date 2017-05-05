@@ -42,7 +42,9 @@ class Github {
             return Promise.resolve({ name: loserName });
 
         return this.api.users.getForUser({ username })
-            .catch(err => Promise.reject(err.status));
+            .catch(err => {
+                throw err.status;
+            });
     }
     static validatePing(event) {
         if(isValidHookConfig(event))
