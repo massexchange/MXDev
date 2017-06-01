@@ -11,12 +11,13 @@ const format = "DD/MMM/YY";
 const parseReleaseTrigger = trigger =>
     (({ version: {
         id, name, description, userStartDate, userReleaseDate, projectId
-    }}) => {
+    }, webhookEvent}) => {
         const events = [];
 
-        events.push(new ReleaseEvent(trigger, id, name, description,
-            moment(userStartDate, format),
-            moment(userReleaseDate, format), projectId));
+        if(webhookEvent == "jira:version_released")
+            events.push(new ReleaseEvent(trigger, id, name, description,
+                moment(userStartDate, format),
+                moment(userReleaseDate, format), projectId));
 
         return events;
     })(trigger);
