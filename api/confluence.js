@@ -4,7 +4,15 @@ const
 
     Promise = require("bluebird");
 
+const confluenceRenderer = new marked.Renderer();
+
+confluenceRenderer.heading = (text, level) =>
+    level != 3
+        ? `<h${level}>${text}</h${level}>`
+        : "";
+
 const markedOptions = {
+    renderer: confluenceRenderer,
     gfm: true,
     tables: false,
     breaks: true,
@@ -12,11 +20,12 @@ const markedOptions = {
     smartypants: true
 };
 
-const parsePage = ({ id, title, body, _links: { base, webui } }) => ({
+const parsePage = ({ id, title, body, _links: { base, webui }, version: { number } }) => ({
     id,
     title,
     content: body.storage.value,
-    url: base + webui
+    url: base + webui,
+    version: number
 });
 
 const handleErr = err => {
@@ -47,11 +56,26 @@ class Confluence {
         console.log("Converting content...");
         const converted = marked(content, markedOptions);
 
+        return this.getPage(parentPage.space, title)
+            .then((page) =>
+                this.updatePage(page, converted),
+            () =>
+                this.createPage(parentPage, title, converted));
+    }
+    createPage(parentPage, title, content) {
         console.log(`Adding Confluence page ${parentPage.title}/${title}...`);
-        return this.api.postContentAsync(parentPage.space, title, converted, parentPage.id)
+        return this.api.postContentAsync(parentPage.space, title, content, parentPage.id)
             .then(parsePage)
             .tap(page =>
                 console.log("Page created!"))
+            .catch(handleErr);
+    }
+    updatePage({ space, id, version, title }, content) {
+        console.log(`Updating Confluence page ${title}...`);
+        return this.api.putContentAsync(space, id, 1 + version, title, content)
+            .then(parsePage)
+            .tap(page =>
+                console.log("Page updated!"))
             .catch(handleErr);
     }
 }
