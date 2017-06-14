@@ -14,7 +14,9 @@ nconf.env("_");
 
 const engineeringSpace = "ENG";
 
-const { user: username, pass: password } = jiraCreds = nconf.get("JIRA");
+const jiraCreds = nconf.get("JIRA");
+
+const { user: username, pass: password } = jiraCreds;
 
 const jira = new JIRA(jiraCreds);
 const confluence = new Confluence({
@@ -31,7 +33,7 @@ const confluence = new Confluence({
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:ANNOUNCEMENTS:TOKEN"));
 
 const handleRelease = release => {
-    console.log("Fetching release issues...")
+    console.log("Fetching release issues...");
     const issueP = jira.search(`fixVersion = ${release.name} and project = ${release.project.id}`,
         "summary", "key", "issuetype");
 
