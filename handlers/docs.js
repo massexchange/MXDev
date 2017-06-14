@@ -20,11 +20,14 @@ const confluence = new Confluence({
     username, password
 });
 
+const capitalize = word =>
+    word[0].toUpperCase() + word.slice(1);
+
 const uploadPageTo = parent => ([name, content]) =>
     confluence.addPage(parent, name, content);
 
 const uploadSectionTo = parent => ([name, elements]) => {
-    const homeP = confluence.addPage(parent, name, `${name} Home`);
+    const homeP = confluence.addSectionHomepage(parent, capitalize(name));
 
     const { files, dirs } = Object.keys(elements)
         .map(key => [key, elements[key]])

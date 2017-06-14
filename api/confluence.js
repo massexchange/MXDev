@@ -3,6 +3,7 @@ const
 
     ConfluenceApi = require("confluence-api"),
     marked = require("marked"),
+    commonTags = require("common-tags"),
 
     Promise = require("bluebird");
 
@@ -42,6 +43,21 @@ const handleErr = err => {
     return Promise.reject(new Error(message, err));
 };
 
+const { TemplateTag, oneLineTrim } = commonTags;
+
+const quoteEscape = new TemplateTag({
+    onEndResult(result) {
+        return result.replace(/\"/g, '\\"');
+    }
+});
+
+const childrenMacro = oneLineTrim`
+    <ac:structured-macro ac:name="children" ac:schema-version="2" ac:macro-id="2c6d0117-f35c-446b-93db-15fcc5bc5012">
+        <ac:parameter ac:name="all">
+            true
+        </ac:parameter>
+    </ac:structured-macro>`;
+
 class Confluence {
     constructor({ username, password }) {
         this.api = Promise.promisifyAll(new ConfluenceApi({
@@ -65,17 +81,22 @@ class Confluence {
             //     console.log("Got page!"))
             .catch(handleErr);
     }
-    addPage(parentPage, title, content) {
+    addPage(parentPage, title, content, convert = true) {
         const pageP = this.getPage(parentPage.space, title);
 
         // console.log("Converting content...");
-        const converted = marked(content, markedOptions);
+        const pageContent = convert
+            ? marked(content, markedOptions)
+            : content;
 
         return pageP
             .then((page) =>
-                this.updatePage(parentPage, page, converted),
+                this.updatePage(parentPage, page, pageContent),
             () =>
-                this.createPage(parentPage, title, converted));
+                this.createPage(parentPage, title, pageContent));
+    }
+    addSectionHomepage(parentPage, title) {
+        return this.addPage(parentPage, title, childrenMacro, false);
     }
     createPage(parentPage, title, content) {
         console.log(`Creating page ${parentPage.title}/${title}...`);

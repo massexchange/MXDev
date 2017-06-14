@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "bluebird": "^3.4.7",
+    "common-tags": "^1.4.0",
     "confluence-api": "^1.1.0",
     "github": "^8.1.1",
     "hipchatter": "^1.0.0",
