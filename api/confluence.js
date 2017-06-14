@@ -3,9 +3,11 @@ const
 
     ConfluenceApi = require("confluence-api"),
     marked = require("marked"),
-    commonTags = require("common-tags"),
+    { oneLineTrim, stripIndent } = require("common-tags"),
 
-    Promise = require("bluebird");
+    Promise = require("bluebird"),
+
+    util = require("../util");
 
 const confluenceRenderer = new marked.Renderer();
 
@@ -16,7 +18,7 @@ confluenceRenderer.heading = (text, level) =>
 
 confluenceRenderer.link = (href, title, text) => {
     const path = url.parse(href).pathname.split("/");
-    const pageName = path[path.length - 1];
+    const pageName = util.stripExtension(path[path.length - 1]);
 
     return `<a href="${pageName}" alt="${title}">${text}</a>`;
 };
@@ -43,20 +45,15 @@ const handleErr = err => {
     return Promise.reject(new Error(message, err));
 };
 
-const { TemplateTag, oneLineTrim } = commonTags;
-
-const quoteEscape = new TemplateTag({
-    onEndResult(result) {
-        return result.replace(/\"/g, '\\"');
-    }
-});
-
 const childrenMacro = oneLineTrim`
     <ac:structured-macro ac:name="children" ac:schema-version="2" ac:macro-id="2c6d0117-f35c-446b-93db-15fcc5bc5012">
         <ac:parameter ac:name="all">
             true
         </ac:parameter>
     </ac:structured-macro>`;
+
+const pageMessage = (parentPage, title) =>
+    `page ${parentPage.title}/${title}...`;
 
 class Confluence {
     constructor({ username, password }) {
@@ -76,15 +73,11 @@ class Confluence {
                 const page = parsePage(results[0]);
                 page.space = space;
                 return page;
-            })
-            // .tap(page =>
-            //     console.log("Got page!"))
-            .catch(handleErr);
+            }).catch(handleErr);
     }
     addPage(parentPage, title, content, convert = true) {
         const pageP = this.getPage(parentPage.space, title);
 
-        // console.log("Converting content...");
         const pageContent = convert
             ? marked(content, markedOptions)
             : content;
@@ -95,34 +88,35 @@ class Confluence {
             () =>
                 this.createPage(parentPage, title, pageContent));
     }
-    addSectionHomepage(parentPage, title) {
-        return this.addPage(parentPage, title, childrenMacro, false);
+    addSectionHomepage(parentPage, title, description) {
+        const content = typeof description == "string"
+            ? stripIndent`
+                ${marked(description, markedOptions)}
+                <hr/>
+                ${childrenMacro}`
+            : childrenMacro;
+
+        return this.addPage(parentPage, title, content, false);
     }
     createPage(parentPage, title, content) {
-        console.log(`Creating page ${parentPage.title}/${title}...`);
+        console.log(`Creating ${pageMessage(parentPage, title)}`);
 
         return this.api.postContentAsync(parentPage.space, title, content, parentPage.id)
             .then(parsePage)
             .then(page => {
                 page.space = parentPage.space;
                 return page;
-            })
-            // .tap(page =>
-            //     console.log("Page created!"))
-            .catch(handleErr);
+            }).catch(handleErr);
     }
     updatePage(parentPage, { space, id, version, title }, content) {
-        console.log(`Updating page ${parentPage.title}/${title}...`);
+        console.log(`Updating ${pageMessage(parentPage, title)}`);
 
         return this.api.putContentAsync(space, id, 1 + version, title, content)
             .then(parsePage)
             .then(page => {
                 page.space = space;
                 return page;
-            })
-            // .tap(page =>
-            //     console.log("Page updated!"))
-            .catch(handleErr);
+            }).catch(handleErr);
     }
 }
 
