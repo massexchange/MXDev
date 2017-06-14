@@ -1,4 +1,6 @@
 const
+    url = require("url"),
+
     ConfluenceApi = require("confluence-api"),
     marked = require("marked"),
 
@@ -10,6 +12,13 @@ confluenceRenderer.heading = (text, level) =>
     level != 3
         ? `<h${level}>${text}</h${level}>`
         : "";
+
+confluenceRenderer.link = (href, title, text) => {
+    const path = url.parse(href).pathname.split("/");
+    const pageName = path[path.length - 1];
+
+    return `<a href="${pageName}" alt="${title}">${text}</a>`;
+};
 
 const markedOptions = {
     renderer: confluenceRenderer,
@@ -41,41 +50,57 @@ class Confluence {
         }));
     }
     getPage(space, title) {
-        console.log(`Querying Confluence for ${space}/${title}...`);
+        console.log(`Querying for page ${title} in ${space}...`);
+
+        if(typeof space == "undefined")
+            throw new Error("Space cannot be enpty!");
+
         return this.api.getContentByPageTitleAsync(space, title)
             .then(({ results }) => {
                 const page = parsePage(results[0]);
                 page.space = space;
                 return page;
             })
-            .tap(page =>
-                console.log("Got page!"))
+            // .tap(page =>
+            //     console.log("Got page!"))
             .catch(handleErr);
     }
     addPage(parentPage, title, content) {
-        console.log("Converting content...");
+        const pageP = this.getPage(parentPage.space, title);
+
+        // console.log("Converting content...");
         const converted = marked(content, markedOptions);
 
-        return this.getPage(parentPage.space, title)
+        return pageP
             .then((page) =>
-                this.updatePage(page, converted),
+                this.updatePage(parentPage, page, converted),
             () =>
                 this.createPage(parentPage, title, converted));
     }
     createPage(parentPage, title, content) {
-        console.log(`Adding Confluence page ${parentPage.title}/${title}...`);
+        console.log(`Creating page ${parentPage.title}/${title}...`);
+
         return this.api.postContentAsync(parentPage.space, title, content, parentPage.id)
             .then(parsePage)
-            .tap(page =>
-                console.log("Page created!"))
+            .then(page => {
+                page.space = parentPage.space;
+                return page;
+            })
+            // .tap(page =>
+            //     console.log("Page created!"))
             .catch(handleErr);
     }
-    updatePage({ space, id, version, title }, content) {
-        console.log(`Updating Confluence page ${title}...`);
+    updatePage(parentPage, { space, id, version, title }, content) {
+        console.log(`Updating page ${parentPage.title}/${title}...`);
+
         return this.api.putContentAsync(space, id, 1 + version, title, content)
             .then(parsePage)
-            .tap(page =>
-                console.log("Page updated!"))
+            .then(page => {
+                page.space = space;
+                return page;
+            })
+            // .tap(page =>
+            //     console.log("Page updated!"))
             .catch(handleErr);
     }
 }

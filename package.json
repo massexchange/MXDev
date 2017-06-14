@@ -13,6 +13,7 @@
     "marked": "^0.3.6",
     "moment": "^2.18.1",
     "nconf": "^0.8.4",
+    "read-dir-files": "^0.1.1",
     "request": "^2.79.0",
     "request-promise": "^4.1.1"
   },
