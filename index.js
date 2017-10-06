@@ -13,7 +13,8 @@ const
 
     reviewHook = require("./hooks/review"),
     commentHook = require("./hooks/comment"),
-    releaseHook = require("./hooks/release");
+    releaseHook = require("./hooks/release"),
+    hipchatHook = require("./hooks/hipchat");
 
 nconf.env("_");
 
@@ -24,8 +25,10 @@ const LOG = message => {
 const hooks = {
     review: reviewHook,
     comment: commentHook,
-    release: releaseHook
+    release: releaseHook,
+    hipchat: hipchatHook
 };
+
 const handleWebhook = request => {
     LOG("Received webhook!");
     const trigger = nconf.get("dev")
@@ -38,6 +41,7 @@ const handleWebhook = request => {
     }
 
     const target = request.resource.split('/')[1];
+    console.log(hooks);
     const hook = hooks[target];
 
     LOG(`Hook triggered: ${target}`);
