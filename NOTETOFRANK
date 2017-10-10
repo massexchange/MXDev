@@ -1,0 +1,2 @@
+run with  node-lambda run -j event_up_inst_BE_demo.json
+
