@@ -2,8 +2,10 @@ const Event = require("../event");
 
 /*
     MXDev-Formatted Wrapper for MXControl Control Task.
-    See MXControl/README.md > ControlTask Syntax for more information.
+    See MXControl/README.md > ControlTask Syntax for the makeup of this.task
+    See MXControl/README.md for more information regarding acceptable arguments.
 */
+
 module.exports = class MXControlEvent extends Event {
     constructor(trigger, action, targetType, target, size) {
         super(trigger);
@@ -25,6 +27,5 @@ module.exports = class MXControlEvent extends Event {
 
                     ? this.task = Object.assign({database: target}, controlTask)
                     : console.log("Invalid Target Type.");
-
     }
 };
