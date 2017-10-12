@@ -41,7 +41,6 @@ const handleWebhook = request => {
     }
 
     const target = request.resource.split('/')[1];
-    console.log(hooks);
     const hook = hooks[target];
 
     LOG(`Hook triggered: ${target}`);
