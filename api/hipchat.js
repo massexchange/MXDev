@@ -8,7 +8,8 @@ const
 
 const rooms = {
     dev: "Development",
-    announce: "Announcements"
+    announce: "Announcements",
+    MXControl: "MXControl"
 };
 
 const hipchatRenderer = new marked.Renderer();
