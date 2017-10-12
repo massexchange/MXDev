@@ -9,7 +9,7 @@ nconf.env("_");
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 
 const handleMXControlTask = (event) => {
-    const {task} = event;
+    const task = event.task;
     console.log("Handling MXControl Task...");
     const targetName = task.instance || task.environment || task.database;
 
