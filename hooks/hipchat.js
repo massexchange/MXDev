@@ -6,12 +6,12 @@ const MXControlHandler = require("../handlers/mxcontrol");
 
 const parseHipchatTrigger = (trigger) => {
 
-    const parsedTrigger = simplifyHipchatTrigger;
+    const simpleTrigger = simplifyHipchatTrigger(trigger);
 
     const events = [];
 
-    if (parsedTrigger.event == "room_message") {
-        const commandArgs = parsedTrigger.message.split(" ");
+    if (simpleTrigger.event == "room_message") {
+        const commandArgs = simpleTrigger.message.split(" ");
 
         if (commandArgs[0] == "/mxcontrol")
             events.push(new MXControlEvent(
