@@ -7,30 +7,39 @@ const Promise = require("bluebird");
 nconf.env("_");
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
+const msgMXControlRoom =
+    (message) => hipchat.notify(message, {room: "MXControl"});
 
 const handleMXControlTask = (event) => {
     const task = event.task;
     const targetName = task.instance || task.environment || task.database;
 
-    hipchat.notify(
+
+    msgMXControlRoom(
         MXControl.buildLog(
             targetName,
             task.action,
             task.size,
             task.database
-        ),
-        {room: "MXControl"}
+        )
     );
 
-    return MXControl.runTask(task).then(()=>{
-        hipchat.notify(
-            `MXControl job for ${targetName} Completed.`,
-            {room: "MXControl"}
-        );
-        return Promise.resolve();
-    });
+    return Promise.resolve(MXControl.runTask(task).then((res)=>{
 
-}
+        const action = task.action.toLowerCase();
+        if (action == "status" || action == "info")
+            msgMXControlRoom(res);
+
+        else
+            msgMXControlRoom(
+                `MXControl job for ${targetName} Completed.`
+            );
+
+        return Promise.resolve();
+
+    }));
+
+};
 
 module.exports = {
     matches: event => true,
