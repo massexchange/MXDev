@@ -23,10 +23,16 @@ const handleMXControlTask = (event) => {
 
         const action = task.action.toLowerCase();
 
-        if (action == "status" || action == "info")
+        if (action == "status" || action == "info") {
+            console.log(res);
             msgMXControlRoom(
                 JSON.stringify(res, null, 2)
+                    .replace("[", "")
+                    .replace("]", "")
+                    .replace("{", "")
+                    .replace("}", "\n")
             );
+        }
 
         else
             msgMXControlRoom(
