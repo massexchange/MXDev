@@ -27,9 +27,9 @@ const handleMXControlTask = (event) => {
             console.log(res);
             msgMXControlRoom(
                 JSON.stringify(res)
-                    .replace(/\[|\]|\{/g, "")    //delete square and curlies
-                    .replace(/,/g, "")              //delete commas
-                    .replace(/}/g, "  ")              //replace closing curlies with newline
+                    .replace(/\[|\]|\}/g, "")    //delete square and curlies
+                    .replace(/,/g, "\n")              //delete commas
+                    .replace(/\{/g, "\n---->")              //replace closing curlies with newline
             );
         }
 
