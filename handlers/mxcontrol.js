@@ -29,7 +29,7 @@ const handleMXControlTask = (event) => {
                 JSON.stringify(res)
                     .replace(/\[|\]|\}/g, "")    //delete square and curlies
                     .replace(/,/g, "\n")              //delete commas
-                    .replace(/\{/g, "\n-->")              //replace closing curlies with newline
+                    .replace(/\{/g, "\n--> ")              //replace closing curlies with newline
                     .replace(/"/g, "")
                     .replace(/:/g, ": ")
             );
@@ -42,6 +42,12 @@ const handleMXControlTask = (event) => {
 
         return Promise.resolve();
 
+    }).catch(err =>{
+        //task failed for some reason -- shoot errors
+        console.log(err);
+        //attempt to notify Hipchat
+        msgMXControlRoom(JSON.stringify(err));
+        msgMXControlRoom("Something went wrong with the operation. Ops has been notified.");
     }));
 
 };
