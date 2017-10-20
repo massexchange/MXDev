@@ -26,12 +26,10 @@ const handleMXControlTask = (event) => {
         if (action == "status" || action == "info") {
             console.log(res);
             msgMXControlRoom(
-                JSON.stringify(res, null, 2)
-                    .replace(/\[|\]/g, "")  //delete square brackets
-                    .replace(/{/g, "")      //delete opening curlies
-                    .replace(/,/g, "")      //delete commas
-                    .replace(/}/g, "<br>")    //replace closing curlies with newline
-                    .replace(/<br>+/g, "<br>")  //replace repeated newlines with single newline
+                JSON.stringify(res)
+                    .replace(/\[|\]|\{/g, "")    //delete square and curlies
+                    .replace(/,/g, "")              //delete commas
+                    .replace(/}/g, "  ")              //replace closing curlies with newline
             );
         }
 
