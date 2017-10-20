@@ -30,8 +30,8 @@ const handleMXControlTask = (event) => {
                     .replace(/\[|\]/g, "")  //delete square brackets
                     .replace(/{/g, "")      //delete opening curlies
                     .replace(/,/g, "")      //delete commas
-                    .replace(/}/g, "\n")    //replace closing curlies with newline
-                    .replace(/\n+/g, "\n")  //replace repeated newlines with single newline
+                    .replace(/}/g, "<br>")    //replace closing curlies with newline
+                    .replace(/<br>+/g, "<br>")  //replace repeated newlines with single newline
             );
         }
 
