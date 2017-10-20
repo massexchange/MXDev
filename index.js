@@ -30,9 +30,9 @@ const hooks = {
 };
 
 const handleWebhook = request => {
-    LOG("Received webhook!");
-    const trigger = nconf.get("dev")
-        ? request.body
+    LOG("Received webhook!");        //ENV VAR BOOLS OPERATE ON THE
+    const trigger = nconf.get("dev") //PRESENCE OF ANY STRING
+        ? request.body               //"TRUE" AND "FALSE" WILL BOTH BE TRUE.
         : JSON.parse(request.body);
 
     if(Github.isPingEvent(trigger)) {
