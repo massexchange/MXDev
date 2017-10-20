@@ -29,7 +29,9 @@ const handleMXControlTask = (event) => {
                 JSON.stringify(res)
                     .replace(/\[|\]|\}/g, "")    //delete square and curlies
                     .replace(/,/g, "\n")              //delete commas
-                    .replace(/\{/g, "\n---->")              //replace closing curlies with newline
+                    .replace(/\{/g, "\n-->")              //replace closing curlies with newline
+                    .replace(/"/g, "")
+                    .replace(/:/g, ": ")
             );
         }
 
