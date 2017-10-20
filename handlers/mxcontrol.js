@@ -22,11 +22,11 @@ const handleMXControlTask = (event) => {
     return Promise.resolve(MXControl.runTask(task).then((res)=>{
 
         const action = task.action.toLowerCase();
-        if (action == "status" || action == "info") {
-            console.log(res);
-            msgMXControlRoom(JSON.stringify(res));
-        }
 
+        if (action == "status" || action == "info")
+            msgMXControlRoom(
+                JSON.stringify(res, null, 2)
+            );
 
         else
             msgMXControlRoom(
