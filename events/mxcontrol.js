@@ -18,12 +18,12 @@ module.exports = class MXControlEvent extends Event {
         if (size) controlTask = Object.assign({size: size}, controlTask);
 
         this.task =
-        (targetType == "env")
+        (targetType == "env" || targetType == "environment")
             ? this.task = Object.assign({environment: target}, controlTask)
-            : (targetType == "inst")
+            : (targetType == "inst" || targetType == "instance")
 
                 ? this.task = Object.assign({instance: target}, controlTask)
-                : (targetType == "db")
+                : (targetType == "db" || targetType == "database")
 
                     ? this.task = Object.assign({database: target}, controlTask)
                     : console.log("Invalid Target Type.");
