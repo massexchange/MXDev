@@ -9,6 +9,7 @@ const
 
 const parseReviewTrigger = trigger =>
     (({
+        action,
         review: { user, state, body, html_url },
         pull_request: { head, title },
         repository: { name, owner }
@@ -23,10 +24,11 @@ const parseReviewTrigger = trigger =>
             owner: owner.login
         }, html_url));
 
-        events.push(new ReviewEvent(trigger, user.login, {
-            branch: head.ref,
-            title: title
-        }, state, html_url));
+        if(action == "submitted")
+            events.push(new ReviewEvent(trigger, user.login, {
+                branch: head.ref,
+                title: title
+            }, state, html_url));
 
         return events;
     })(trigger);
