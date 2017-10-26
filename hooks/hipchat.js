@@ -42,7 +42,7 @@ const simplifyHipchatTrigger = (trigger) => {
 module.exports = new Hook(
     [MXControlHandler],
     parseHipchatTrigger,
-    (trigger)=> {
+    (trigger) => {
         console.log("Recieved Hipchat Message:");
         console.log(simplifyHipchatTrigger(trigger));
     });
