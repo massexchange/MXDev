@@ -35,11 +35,6 @@ const handleMXControlTask = (event) => {
             );
         }
 
-        else
-            msgMXControlRoom(
-                `MXControl job for ${targetName} Completed.`
-            );
-
         return Promise.resolve();
 
     }).catch(err =>{
