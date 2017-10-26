@@ -1,4 +1,3 @@
-
 const Hook = require("../hook");
 
 const MXControlEvent = require("../events/mxcontrol");

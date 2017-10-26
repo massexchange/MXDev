@@ -23,7 +23,7 @@ const handleMXControlTask = (event) => {
 
         const action = task.action.toLowerCase();
 
-        if (action == "status" || action == "info") {
+        if (["status","info"].includes(action)) {
             console.log(res);
             msgMXControlRoom(
                 JSON.stringify(res)
