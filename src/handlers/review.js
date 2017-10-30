@@ -39,13 +39,12 @@ const handleReview = async event => {
     if(event.state == "approved")
         await jira.addApprover(user, event.pullRequest.branch);
 
-    const output = message(githubUser, event);
-
+    var output = message(githubUser, event);
     try {
         output += forIssue(
             await jira.lookupIssue(event.pullRequest.branch));
     } catch(e) {
-        console.log("No issue found");
+        console.log(`No issue found: ${e}`);
     }
 
     return hipchat.notify(output, { color: color[event.state] });

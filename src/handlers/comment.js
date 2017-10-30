@@ -43,11 +43,13 @@ const handleTestResult = async (event, testPassed) => {
     if(testPassed)
         await jira.addTester(jiraUsername, issueKey);
 
-    const output = testPassMessage(githubUser, event, testPassed);
+    var output = testPassMessage(githubUser, event, testPassed);
     try {
-        const jiraIssue = await jira.lookupIssue(issueKey);
-        output += forIssue(jiraIssue);
-    } catch(e) {}
+        output += forIssue(
+            await jira.lookupIssue(issueKey));
+    } catch(e) {
+        console.log(`No issue found: ${e}`);
+    }
 
     return hipchat.notify(output, {
         color: color[testPassed]

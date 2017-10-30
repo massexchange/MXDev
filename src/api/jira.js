@@ -71,7 +71,7 @@ class JIRA {
             });
             return issueKey;
         } catch(err) {
-            throw err.response.body.errorMessages;
+            throw new Error(err.response.body.errorMessages);
         }
     }
     async lookupIssue(issueKey) {
@@ -85,7 +85,7 @@ class JIRA {
             });
             return response;
         } catch(err) {
-            throw err.response.body.errorMessages;
+            throw new Error(err.response.body.errorMessages);
         }
     }
     static issueUrl(issue) {
