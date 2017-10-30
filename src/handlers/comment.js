@@ -7,6 +7,7 @@ const
     Hipchat = require("../api/hipchat"),
 
     { link } = require("../util/markdown"),
+    { forIssue } = require("../message/jira"),
 
     CommentEvent = require("../events/comment");
 
@@ -20,32 +21,41 @@ const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const handleTestResult = event => testPassed => {
-    if(!testPassed) {
-        console.log("Test was a fail, 2bad so sad.");
-        return Promise.resolve();
-    }
+const color = {
+    true: "green",
+    false: "red"
+};
 
-    console.log("Registering test pass...");
+const handleTestResult = event => async testPassed => {
+    console.log("Registering test result...");
+
     const issueBranchP = event.issue.branch
         ? Promise.resolve(event.issue.branch)
         : github.findIssueBranch(event.issue.number, event.repo)
             .catch(err => console.log(err));
 
-    return github.findUser(event.user)
-        .then(githubUser =>
-            Promise.all([
-                jira.findUsername(githubUser),
-                issueBranchP])
-            .spread((jiraUsername, issueKey) =>
-                jira.addTester(jiraUsername, issueKey)
-                    .then(() => jira.lookupIssue(issueKey)))
-            .then(jiraIssue => hipchat.notify(
-                testPassMessage(githubUser, event, jiraIssue))));
+    const githubUser = await github.findUser(event.user);
+
+    const [jiraUsername, issueKey] = await Promise.all([
+        jira.findUsername(githubUser),
+        issueBranchP]);
+
+    if(testPassed)
+        await jira.addTester(jiraUsername, issueKey);
+
+    const output = testPassMessage(githubUser, event, testPassed);
+    try {
+        const jiraIssue = await jira.lookupIssue(issueKey);
+        output += forIssue(jiraIssue);
+    } catch(e) {}
+
+    return hipchat.notify(output, {
+        color: color[testPassed]
+    });
 };
 
-const testPassMessage = (user, event, issue) =>
-`${user.name} just successfully tested ${link(event.issue.name, event.url)} for issue ${link(`[${issue.key}] - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
+const testPassMessage = ({ name }, { issue, url }, passed) =>
+`${name} just ${passed ? "" : "un" }successfully tested ${link(issue.name, url)}`;
 
 const testResultPattern = /\[Test: (Pass|Fail)\]/;
 const testResults = {

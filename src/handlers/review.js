@@ -6,6 +6,7 @@ const
     Hipchat = require("../api/hipchat"),
 
     { link } = require("../util/markdown"),
+    { forIssue } = require("../message/jira"),
 
     ReviewEvent = require("../events/review");
 
@@ -21,7 +22,12 @@ const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
 const action = {
     "approved": "approved",
-    "changes_requested": "requested changes"
+    "changes_requested": "requested changes on"
+};
+
+const color = {
+    "approved": "green",
+    "changes_requested": "red"
 };
 
 const handleReview = async event => {
@@ -42,11 +48,8 @@ const handleReview = async event => {
         console.log("No issue found");
     }
 
-    return hipchat.notify(output);
+    return hipchat.notify(output, { color: color[event.state] });
 };
-
-const forIssue = issue =>
-`for issue ${link(`${issue.key} - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
 
 const message = (user, { state, url, pullRequest }) =>
 `${user.name} just ${action[state]} ${link(pullRequest.title, url)}`;
