@@ -25,59 +25,68 @@ class JIRA {
     constructor(secretSecretJiraCredsShh) {
         this.creds = secretSecretJiraCredsShh;
     }
-    findUsername(user) {
+    async findUsername(user) {
         console.log(`Finding JIRA username for ${user.name}...`);
 
-        return request({
+        const users = await request({
             url: `${jiraAPI}/user/search`,
             qs: {
                 username: user.name
             },
             json: true,
             auth: this.creds
-        }).then(users => {
-            if(users.length == 0)
-                return Promise.reject(
-                    "No users with that name found! Make sure the user's name in JIRA and Github are the same.");
-
-            return users[0];
         });
-    }
-    addApprover(user, issueKey) {
-        console.log(`Adding ${user.name} as an approver of ${issueKey} on JIRA...`);
 
-        return request.put({
-            url: `${jiraAPI}/issue/${issueKey}`,
-            json: true,
-            auth: this.creds,
-            body: addApproverCommand(user.name)
-        }).catch(err => {
+        if(users.length == 0)
+            return Promise.reject(
+                "No users with that name found! Make sure the user's name in JIRA and Github are the same.");
+
+        return users[0];
+    }
+    async addApprover({ name }, issueKey) {
+        console.log(`Adding ${name} as an approver of ${issueKey} on JIRA...`);
+
+        try {
+            await request.put({
+                url: `${jiraAPI}/issue/${issueKey}`,
+                json: true,
+                auth: this.creds,
+                body: addApproverCommand(name)
+            });
+            return issueKey;
+        } catch(err) {
             console.log("Issue not found! Check the branch name.");
-            return Promise.resolve();
-        }).then(() => issueKey);
+            return;
+        }
     }
-    addTester(user, issueKey) {
-        console.log(`Setting ${user.name} as the tester of ${issueKey} on JIRA...`);
+    async addTester({ name }, issueKey) {
+        console.log(`Setting ${name} as the tester of ${issueKey} on JIRA...`);
 
-        return request.put({
-            url: `${jiraAPI}/issue/${issueKey}`,
-            json: true,
-            auth: this.creds,
-            body: addTesterCommand(user.name)
-        }).catch(err => {
+        try {
+            await request.put({
+                url: `${jiraAPI}/issue/${issueKey}`,
+                json: true,
+                auth: this.creds,
+                body: addTesterCommand(name)
+            });
+            return issueKey;
+        } catch(err) {
             throw err.response.body.errorMessages;
-        }).then(() => issueKey);
+        }
     }
-    lookupIssue(issueKey) {
+    async lookupIssue(issueKey) {
         console.log(`Looking up ${issueKey} on JIRA...`);
 
-        return request.get({
-            url: `${jiraAPI}/issue/${issueKey}`,
-            json: true,
-            auth: this.creds
-        }).catch(err => {
+        try {
+            const response = await request.get({
+                url: `${jiraAPI}/issue/${issueKey}`,
+                json: true,
+                auth: this.creds
+            });
+            return response;
+        } catch(err) {
             throw err.response.body.errorMessages;
-        });
+        }
     }
     static issueUrl(issue) {
         return `https://massexchange.atlassian.net/browse/${issue.key}`;

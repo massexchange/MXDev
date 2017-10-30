@@ -25,12 +25,12 @@ const action = {
 };
 
 const handleReview = async event => {
-    console.log("Registering approval...");
+    console.log("Registering review...");
 
     const githubUser = await github.findUser(event.user);
-    const user = jira.findUsername(githubUser);
+    const user = await jira.findUsername(githubUser);
 
-    if(event.state = "approved")
+    if(event.state == "approved")
         await jira.addApprover(user, event.pullRequest.branch);
 
     const output = message(githubUser, event);

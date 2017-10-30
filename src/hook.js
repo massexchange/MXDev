@@ -1,6 +1,4 @@
 const
-    Promise = require("bluebird"),
-
     Event = require("./event");
 
 const parseTrigger = trigger =>
@@ -12,7 +10,7 @@ module.exports = class Hook {
         this.triggerParser = triggerParser;
         this.message = message;
     }
-    trigger(trigger) {
+    async trigger(trigger) {
         console.log("Parsing trigger...");
         console.log(this.message(trigger));
 
@@ -23,11 +21,10 @@ module.exports = class Hook {
         console.log(`Potential handlers: ${this.handlers.map(handler =>
             handler.name).join(", ")}`);
 
-        return Promise.all(events.map(this.handle, this))
-            .tap(() =>
-                console.log("Trigger handled"));
+        await Promise.all(events.map(this.handle, this));
+        console.log("Trigger handled");
     }
-    handle(event) {
+    async handle(event) {
         const relevantHandlers = this.handlers
             .filter(handler =>
                 event instanceof handler.accepts)
@@ -37,11 +34,12 @@ module.exports = class Hook {
 
         console.log(`${event.constructor.name}: ${relevantHandlers.length} handler(s)`);
 
-        const resultPs = relevantHandlers.map(handler =>
-            handler.handle(event).tap(x =>
-                console.log(`Handler ${handler.name} is done with the ${event.constructor.name}`)));
+        const resultPs = relevantHandlers.map(async handler => {
+            await handler.handle(event);
+            console.log(`Handler ${handler.name} is done with the ${event.constructor.name}`);
+        });
 
-        return Promise.all(resultPs).tap(x =>
-            console.log(`${event.constructor.name} handled`));
+        await Promise.all(resultPs);
+        console.log(`${event.constructor.name} handled`);
     }
 };
