@@ -32,7 +32,8 @@ module.exports = class Hook {
             .filter(handler =>
                 event instanceof handler.accepts)
             .filter(handler =>
-                handler.matches(event));
+                (handler.matches ||
+                (() => true))(event));
 
         console.log(`${event.constructor.name}: ${relevantHandlers.length} handler(s)`);
 

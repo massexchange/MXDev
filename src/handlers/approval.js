@@ -19,24 +19,41 @@ const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const handleApproval = event => {
-    console.log("Registering approval...");
-
-    return github.findUser(event.user).then(githubUser =>
-        jira.findUsername(githubUser)
-            .then(user => jira.addApprover(user, event.pullRequest.branch))
-            .then(() => jira.lookupIssue(event.pullRequest.branch))
-            .then(issue => hipchat.notify(
-                approvalMessage(githubUser, event, issue))));
+const action = {
+    "approved": "approved",
+    "changes_requested": "requested changes"
 };
 
-const approvalMessage = (user, approval, issue) =>
-`${user.name} just approved ${link(approval.pullRequest.title, approval.url)} for issue ${link(`${issue.key} - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
+const handleReview = async event => {
+    console.log("Registering approval...");
+
+    const githubUser = await github.findUser(event.user);
+    const user = jira.findUsername(githubUser);
+
+    if(event.state = "approved")
+        await jira.addApprover(user, event.pullRequest.branch);
+
+    const output = message(githubUser, event);
+
+    try {
+        output += forIssue(
+            await jira.lookupIssue(event.pullRequest.branch));
+    } catch(e) {
+        console.log("No issue found");
+    }
+
+    return hipchat.notify(output);
+};
+
+const forIssue = issue =>
+`for issue ${link(`${issue.key} - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
+
+const message = (user, { state, url, pullRequest }) =>
+`${user.name} just ${action[state]} ${link(pullRequest.title, url)}`;
 
 module.exports = {
-    matches: event => event.state == "approved",
-    name: "Approval",
+    matches: event => Object.keys(action).includes(event.state),
+    name: "Review",
     accepts: ReviewEvent,
-    handle: handleApproval,
-    irrelevantMessage: "Was not an approval, too bad."
+    handle: handleReview
 };

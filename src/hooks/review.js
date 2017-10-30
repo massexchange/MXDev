@@ -4,7 +4,7 @@ const
     CommentEvent = require("../events/comment"),
     ReviewEvent = require("../events/review"),
 
-    approvalHandler = require("../handlers/approval"),
+    reviewHandler = require("../handlers/review"),
     commentHandler = require("../handlers/comment");
 
 const parseReviewTrigger = trigger =>
@@ -34,7 +34,7 @@ const parseReviewTrigger = trigger =>
     })(trigger);
 
 module.exports = new Hook([
-    approvalHandler,
+    reviewHandler,
     commentHandler
 ], parseReviewTrigger, ({ sender, pull_request }) =>
     `${sender.login} reviewed Github PR for ${pull_request.head.ref}`);
