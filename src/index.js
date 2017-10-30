@@ -45,33 +45,29 @@ const handleWebhook = request => {
     return hook.trigger(trigger);
 };
 
-exports.handler = (event, context, callback) => {
-    handleWebhook(event)
-        .then(result => {
-            console.log("Returning response:");
+const buildResponse = (code, body) => ({
+    statusCode: code,
+    headers: {
+        "Access-Control-Allow-Origin": "*"
+    },
+    body: JSON.stringify(body)
+});
 
-            const response = {
-                statusCode: 200,
-                headers: {
-                    "Access-Control-Allow-Origin": "*"
-                },
-                body: JSON.stringify({
-                    result: "success"
-                })
-            };
-            console.log(response);
+exports.handler = async (event, context, callback) => {
+    try {
+        const result = await handleWebhook(event);
+        console.log("Returning response:");
 
-            callback(null, response);
-        }).catch(err => {
-            console.log(`Error: ${err}`);
-            callback(null, {
-                statusCode: 500,
-                headers: {
-                    "Access-Control-Allow-Origin": "*"
-                },
-                body: JSON.stringify({
-                    error: err.message
-                })
-            });
+        const response = buildResponse(200, {
+            result: "success"
         });
+
+        console.log(response);
+        callback(null, response);
+    } catch(err) {
+        console.log(`Error: ${err}`);
+        callback(null, buildResponse(500, {
+            error: err.message
+        }));
+    }
 };

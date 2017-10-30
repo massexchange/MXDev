@@ -26,7 +26,7 @@ const color = {
     false: "red"
 };
 
-const handleTestResult = event => async testPassed => {
+const handleTestResult = async (event, testPassed) => {
     console.log("Registering test result...");
 
     const issueBranchP = event.issue.branch
@@ -73,11 +73,14 @@ const parseComment = comment => {
     return Promise.resolve(testResults[match[1]]);
 };
 
-const handler = event => {
-    return parseComment(event.body)
-        .then(handleTestResult(event))
+const handler = async event => {
+    try {
+        const result = await parseComment(event.body);
+        return handleTestResult(event, result);
+    } catch(e) {
         //TODO: fix this later. handle different comment cases properly
-        .catch(() => Promise.resolve());
+        return;
+    }
 };
 
 module.exports = {
