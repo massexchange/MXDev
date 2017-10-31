@@ -1,8 +1,14 @@
 "use strict";
 
 const
+    nconf = require("nconf"),
+    Promise = require("bluebird"),
+    fs = Promise.promisify(require("fs")),
+
     GitHubApi = require("github"),
-    Promise = require("bluebird");
+    jwt = require("jsonwebtoken");
+
+nconf.env("_")
 
 const pullRequestReviewEvent = "pull_request_review";
 
@@ -19,14 +25,27 @@ class Github {
             Promise: Promise,
             timeout: 5000
         });
-        this.api.authenticate({
-            type: "token",
-            token
-        });
+        this.hasAuth = this.requestToken();
+
         this.losers = losers;
     }
-    findIssueBranch(issue, { owner, name: repo }) {
+    async requestToken() {
+        const cert = await fs.readFileAsync(nconf.get("GITHUB:KEY"));
+        const token = jwt.sign({ iss: nconf.get("GITHUB:APPID") },
+            cert, {
+                algorithm: "RS256",
+                expiresIn: "10m"
+            });
+
+        this.api.authenticate({
+            type: "integration",
+            token
+        });
+    }
+    async findIssueBranch(issue, { owner, name: repo }) {
         console.log("Looking up issue branch...");
+
+        await this.hasAuth;
 
         return this.api.pullRequests.get({
             owner,
@@ -34,8 +53,10 @@ class Github {
             number: issue
         }).then(pr => pr.head.ref);
     }
-    findUser(username) {
+    async findUser(username) {
         console.log(`Fetching Github user ${username}...`);
+
+        await this.hasAuth;
 
         const loserName = this.losers[username];
         if(loserName)
@@ -46,20 +67,22 @@ class Github {
                 throw err.status;
             });
     }
-    comment({ repo: { owner, name: repo }, number }, message) {
+    async comment({ repo: { owner, name: repo }, number }, message) {
         console.log(`Commenting on ${owner}/${repo}`);
+
+        await this.hasAuth;
 
         return this.api.issues.createComment({
             owner, repo, number,
             body: message
         });
     }
-    static validatePing(event) {
+    static async validatePing(event) {
         if(isValidHookConfig(event))
-            return Promise.resolve("Configuration valid!");
+            return "Configuration valid!";
 
-        return Promise.reject(new Error(
-            `Webhook configuration is incorrect! Expecting event ${pullRequestReviewEvent}`));
+        throw new Error(
+            `Webhook configuration is incorrect! Expecting event ${pullRequestReviewEvent}`);
     }
     static isPingEvent(event) {
         return event.zen &&
