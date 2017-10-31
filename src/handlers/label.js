@@ -20,12 +20,7 @@ const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const color = {
-    true: "green",
-    false: "red"
-};
-
-const notMergable = "This PR is not mergeable, are you sure its `ready`?"
+const notMergable = "This PR is not mergeable, are you sure its `ready`?";
 
 /*
     for now, only handling ready labelings
@@ -39,7 +34,7 @@ const notMergable = "This PR is not mergeable, are you sure its `ready`?"
 const handle = async event => {
     console.log("Registering labeling...");
 
-    if(!event.pr.mergable) {
+    if(!event.pr.mergeable) {
         console.log("PR is not mergable, notifying owner");
         return github.comment(event.pr, notMergable);
     }
@@ -64,7 +59,7 @@ const readyMessage = ({ name }, { branch, url }) =>
 `${name} just marked ${link(branch, url)} ready`;
 
 module.exports = {
-    matches: ({ isPresent, name }) => isPresent && name == "ready",
+    matches: ({ isPresent, label }) => isPresent && label == "ready",
     name: "Label",
     accepts: LabelEvent,
     handle,

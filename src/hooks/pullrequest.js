@@ -18,7 +18,7 @@ const parsePrEvent = trigger =>
     }) => {
         const events = [];
 
-        const label = (...args) => new LabelEvent(trigger, label.name, {
+        const labelEvent = (...args) => new LabelEvent(trigger, label.name, {
             branch, number, mergeable,
             repo: {
                 name: repoName,
@@ -27,8 +27,8 @@ const parsePrEvent = trigger =>
         }, login, ...args);
 
         const eventForAction = {
-            labeled: label,
-            unlabeled: () => label(false),
+            labeled: labelEvent,
+            unlabeled: () => labelEvent(false),
             opened: (...args) => new PREvent(trigger, {
                 branch,
                 number,
@@ -38,7 +38,7 @@ const parsePrEvent = trigger =>
             }, login, ...args)
         };
 
-        events.push(eventForAction[action]);
+        events.push(eventForAction[action]());
 
         return events;
     })(trigger);
