@@ -8,7 +8,7 @@ const
     { link } = require("../util/markdown"),
     { forIssue } = require("../message/jira"),
 
-    CommentEvent = require("../events/comment");
+    LabelEvent = require("../events/label");
 
 nconf.env("_");
 
@@ -25,69 +25,48 @@ const color = {
     false: "red"
 };
 
-const handleTestResult = async (event, testPassed) => {
-    console.log("Registering test result...");
+const notMergable = "This PR is not mergeable, are you sure its `ready`?"
 
-    const issueBranchP = event.issue.branch
-        ? Promise.resolve(event.issue.branch)
-        : github.findIssueBranch(event.issue.number, event.repo)
-            .catch(err => console.log(err));
+/*
+    for now, only handling ready labelings
+
+    on label: check if the PR has been approved at all (mergeable)
+    if not, leave a comment saying it didnt go through
+
+    otherwise, transition the jira issue (if it exists)
+    to ready, and report it to hipchat
+*/
+const handle = async event => {
+    console.log("Registering labeling...");
+
+    if(!event.pr.mergable) {
+        console.log("PR is not mergable, notifying owner");
+        return github.comment(event.pr, notMergable);
+    }
 
     const githubUser = await github.findUser(event.user);
+    const jiraUsername = await jira.findUsername(githubUser);
 
-    const [jiraUsername, issueKey] = await Promise.all([
-        jira.findUsername(githubUser),
-        issueBranchP]);
-
-    if(testPassed)
-        await jira.addTester(jiraUsername, issueKey);
-
-    var output = testPassMessage(githubUser, event, testPassed);
+    var output = readyMessage(githubUser, event);
     try {
-        output += forIssue(
-            await jira.lookupIssue(issueKey));
+        const issue = await jira.lookupIssue(event.pr.branch);
+        await jira.transitionIssue(issue, "Mark Ready");
+
+        output += forIssue(issue);
     } catch(e) {
         console.log(`No issue found: ${e}`);
     }
 
-    return hipchat.notify(output, {
-        color: color[testPassed]
-    });
+    return hipchat.notify(output);
 };
 
-const testPassMessage = ({ name }, { issue, url }, passed) =>
-`${name} just ${passed ? "" : "un" }successfully tested ${link(issue.name, url)}`;
-
-const testResultPattern = /\[Test: (Pass|Fail)\]/;
-const testResults = {
-    Pass: true,
-    Fail: false
-};
-const parseComment = comment => {
-    console.log("Parsing comment...");
-    const match = testResultPattern.exec(comment);
-    if(!match) {
-        console.log("Comment was not related to testing.");
-        return Promise.reject();
-    }
-
-    return Promise.resolve(testResults[match[1]]);
-};
-
-const handler = async event => {
-    try {
-        const result = await parseComment(event.body);
-        return handleTestResult(event, result);
-    } catch(e) {
-        //TODO: fix this later. handle different comment cases properly
-        return;
-    }
-};
+const readyMessage = ({ name }, { branch, url }) =>
+`${name} just marked ${link(branch, url)} ready`;
 
 module.exports = {
-    matches: event => ["created", "edited"].includes(event.action),
-    name: "Comment",
-    accepts: CommentEvent,
-    handle: handler,
-    irrelevantMessage: "Don't care about comment deletions."
+    matches: ({ isPresent, name }) => isPresent && name == "ready",
+    name: "Label",
+    accepts: LabelEvent,
+    handle,
+    irrelevantMessage: "Only care about \"ready\" labelings"
 };

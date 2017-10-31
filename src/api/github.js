@@ -46,6 +46,14 @@ class Github {
                 throw err.status;
             });
     }
+    comment({ repo: { owner, name: repo }, number }, message) {
+        console.log(`Commenting on ${owner}/${repo}`);
+
+        return this.api.issues.createComment({
+            owner, repo, number,
+            body: message
+        });
+    }
     static validatePing(event) {
         if(isValidHookConfig(event))
             return Promise.resolve("Configuration valid!");

@@ -8,11 +8,12 @@ const Event = require("../event");
     user: name of the labeler
 */
 module.exports = class LabelEvent extends Event {
-    constructor(trigger, label, branch, user) {
+    constructor(trigger, label, pr, user, isPresent = true) {
         super(trigger);
 
         this.label = label;
-        this.branch = branch;
+        this.pr = pr;
         this.user = user;
+        this.isPresent = isPresent;
     }
 };

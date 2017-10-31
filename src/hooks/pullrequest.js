@@ -2,7 +2,7 @@ const
     Hook = require("../hook"),
 
     LabelEvent = require("../events/label"),
-    PREvent = require("../events/label"),
+    PREvent = require("../events/pullrequest"),
 
     prHandler = require("../handlers/pullrequest"),
     labelHandler = require("../handlers/label");
@@ -11,20 +11,34 @@ const parsePrEvent = trigger =>
     (({
         action,
         label,
-        pull_request: { html_url, head: { ref: branch }, title },
-        sender: { login },
-        repository: { name, owner }
+        pull_request: { number, html_url,
+            head: { ref: branch, repo: { name: repoName, owner: { login: owner } } },
+            title, mergeable },
+        sender: { login }
     }) => {
         const events = [];
 
-        if(action == "labeled")
-            events.push(new LabelEvent(trigger, label.name, branch, login));
-        else if(action == "opened")
-            events.push(new PREvent(trigger, {
+        const label = (...args) => new LabelEvent(trigger, label.name, {
+            branch, number, mergeable,
+            repo: {
+                name: repoName,
+                owner
+            }
+        }, login, ...args);
+
+        const eventForAction = {
+            labeled: label,
+            unlabeled: () => label(false),
+            opened: (...args) => new PREvent(trigger, {
                 branch,
+                number,
                 title,
-                url: html_url
-            }, login));
+                url: html_url,
+                mergeable
+            }, login, ...args)
+        };
+
+        events.push(eventForAction[action]);
 
         return events;
     })(trigger);

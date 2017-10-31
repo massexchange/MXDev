@@ -88,6 +88,39 @@ class JIRA {
             throw new Error(err.response.body.errorMessages);
         }
     }
+    async getTransitions({ key }) {
+        try {
+            const response = await request.get({
+                url: `${jiraAPI}/issue/${key}/transitions`,
+                json: true,
+                auth: this.creds
+            });
+            return response;
+        } catch(err) {
+            throw new Error(err.response.body.errorMessages);
+        }
+    }
+    async transitionIssue(issue, target) {
+        console.log(`Triggering transition "${target}" on ${issue.key}...`);
+
+        try {
+            const { transitions } = await this.getTransitions(issue);
+
+            const { targetTransitionId } = transitions
+                .filter(({ name }) => name == target)[0];
+
+            const response = await request.post({
+                url: `${jiraAPI}/issue/${issue.key}/transitions`,
+                json: true,
+                auth: this.creds,
+                body: { transition: {
+                    id: targetTransitionId } }
+            });
+            return response;
+        } catch(err) {
+            throw new Error(err.response.body.errorMessages);
+        }
+    }
     static issueUrl(issue) {
         return `https://massexchange.atlassian.net/browse/${issue.key}`;
     }
