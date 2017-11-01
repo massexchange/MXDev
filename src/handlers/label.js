@@ -53,7 +53,7 @@ const handle = async event => {
 };
 
 const readyMessage = ({ name }, { title, url }) =>
-`${name} just marked ${link(title, url)} ready`;
+`${name} just marked ready PR ${link(title, url)}`;
 
 module.exports = {
     matches: ({ isPresent, label }) => isPresent && label == "ready",
