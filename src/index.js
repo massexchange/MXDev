@@ -40,7 +40,7 @@ const handleWebhook = request => {
 
     LOG(`Hook triggered: ${target}`);
 
-    return hook.trigger(trigger);
+    return hook.trigger(trigger, request.headers);
 };
 
 const buildResponse = (code, body) => ({

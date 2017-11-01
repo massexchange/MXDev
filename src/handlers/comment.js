@@ -13,10 +13,6 @@ const
 
 nconf.env("_");
 
-const github = new Github(
-    nconf.get("GITHUB:TOKEN"),
-    nconf.get("LOSERS"));
-
 const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
@@ -28,6 +24,8 @@ const color = {
 
 const handleTestResult = async (event, testPassed) => {
     console.log("Registering test result...");
+
+    const github = await Github.init(event.installation);
 
     const issueBranchP = event.issue.branch
         ? Promise.resolve(event.issue.branch)

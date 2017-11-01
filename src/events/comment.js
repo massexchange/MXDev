@@ -1,4 +1,4 @@
-const Event = require("../event");
+const GithubEvent = require("./github");
 
 /*
     Represents a comment on an issue
@@ -12,7 +12,7 @@ const Event = require("../event");
         - name
         - owner
 */
-module.exports = class CommentEvent extends Event {
+module.exports = class CommentEvent extends GithubEvent {
     constructor(trigger, user, body, action, issue, repo, url) {
         super(trigger);
 

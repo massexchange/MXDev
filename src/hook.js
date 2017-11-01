@@ -10,11 +10,11 @@ module.exports = class Hook {
         this.triggerParser = triggerParser;
         this.message = message;
     }
-    async trigger(trigger) {
+    async trigger(trigger, headers) {
         console.log("Parsing trigger...");
         console.log(this.message(trigger));
 
-        const events = this.triggerParser(trigger);
+        const events = this.triggerParser(trigger, headers);
         console.log(`Found events: ${events.map(event =>
             event.constructor.name).join(", ")}`);
 

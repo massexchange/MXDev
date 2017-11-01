@@ -12,10 +12,6 @@ const
 
 nconf.env("_");
 
-const github = new Github(
-    nconf.get("GITHUB:TOKEN"),
-    nconf.get("LOSERS"));
-
 const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
@@ -32,6 +28,8 @@ const color = {
 
 const handleReview = async event => {
     console.log("Registering review...");
+
+    const github = await Github.init(event.installation);
 
     const githubUser = await github.findUser(event.user);
     const user = await jira.findUsername(githubUser);
