@@ -39,7 +39,10 @@ const parsePrEvent = trigger =>
             }, login, ...args)
         };
 
-        events.push(eventForAction[action]());
+        const eventBuilder = eventForAction[action];
+
+        if(eventBuilder)
+            events.push(eventBuilder());
 
         return events;
     })(trigger);
