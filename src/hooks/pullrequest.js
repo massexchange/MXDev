@@ -19,7 +19,8 @@ const parsePrEvent = trigger =>
         const events = [];
 
         const labelEvent = (...args) => new LabelEvent(trigger, label.name, {
-            branch, number, mergeable,
+            branch, number, mergeable, title,
+            url: html_url,
             repo: {
                 name: repoName,
                 owner

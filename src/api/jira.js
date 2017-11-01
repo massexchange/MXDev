@@ -71,7 +71,7 @@ class JIRA {
             });
             return issueKey;
         } catch(err) {
-            throw new Error(err.response.body.errorMessages);
+            throw new Error(err);
         }
     }
     async lookupIssue(issueKey) {
@@ -85,7 +85,7 @@ class JIRA {
             });
             return response;
         } catch(err) {
-            throw new Error(err.response.body.errorMessages);
+            throw new Error(err);
         }
     }
     async getTransitions({ key }) {
@@ -97,7 +97,7 @@ class JIRA {
             });
             return response;
         } catch(err) {
-            throw new Error(err.response.body.errorMessages);
+            throw new Error(err);
         }
     }
     async transitionIssue(issue, target) {
@@ -106,19 +106,23 @@ class JIRA {
         try {
             const { transitions } = await this.getTransitions(issue);
 
-            const { targetTransitionId } = transitions
+            const targetTransition = transitions
                 .filter(({ name }) => name == target)[0];
+
+            if(!targetTransition)
+                throw new Error(
+                    `Transition ${target} not available for issue ${issue.key}`);
 
             const response = await request.post({
                 url: `${jiraAPI}/issue/${issue.key}/transitions`,
                 json: true,
                 auth: this.creds,
                 body: { transition: {
-                    id: targetTransitionId } }
+                    id: targetTransition.id } }
             });
             return response;
         } catch(err) {
-            throw new Error(err.response.body.errorMessages);
+            throw new Error(err);
         }
     }
     static issueUrl(issue) {

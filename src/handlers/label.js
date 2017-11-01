@@ -38,9 +38,8 @@ const handle = async event => {
     }
 
     const githubUser = await github.findUser(event.user);
-    const jiraUsername = await jira.findUsername(githubUser);
 
-    var output = readyMessage(githubUser, event);
+    var output = readyMessage(githubUser, event.pr);
     try {
         const issue = await jira.lookupIssue(event.pr.branch);
         await jira.transitionIssue(issue, "Mark Ready");
@@ -53,8 +52,8 @@ const handle = async event => {
     return hipchat.notify(output);
 };
 
-const readyMessage = ({ name }, { branch, url }) =>
-`${name} just marked ${link(branch, url)} ready`;
+const readyMessage = ({ name }, { title, url }) =>
+`${name} just marked ${link(title, url)} ready`;
 
 module.exports = {
     matches: ({ isPresent, label }) => isPresent && label == "ready",
