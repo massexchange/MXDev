@@ -4,11 +4,12 @@ const
     CommentEvent = require("../events/comment"),
     ReviewEvent = require("../events/review"),
 
-    approvalHandler = require("../handlers/approval"),
+    reviewHandler = require("../handlers/review"),
     commentHandler = require("../handlers/comment");
 
 const parseReviewTrigger = trigger =>
     (({
+        action,
         review: { user, state, body, html_url },
         pull_request: { head, title },
         repository: { name, owner }
@@ -23,16 +24,17 @@ const parseReviewTrigger = trigger =>
             owner: owner.login
         }, html_url));
 
-        events.push(new ReviewEvent(trigger, user.login, {
-            branch: head.ref,
-            title: title
-        }, state, html_url));
+        if(action == "submitted")
+            events.push(new ReviewEvent(trigger, user.login, {
+                branch: head.ref,
+                title: title
+            }, state, html_url));
 
         return events;
     })(trigger);
 
 module.exports = new Hook([
-    approvalHandler,
+    reviewHandler,
     commentHandler
 ], parseReviewTrigger, ({ sender, pull_request }) =>
     `${sender.login} reviewed Github PR for ${pull_request.head.ref}`);

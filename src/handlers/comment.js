@@ -7,45 +7,55 @@ const
     Hipchat = require("../api/hipchat"),
 
     { link } = require("../util/markdown"),
+    { forIssue } = require("../message/jira"),
 
     CommentEvent = require("../events/comment");
 
 nconf.env("_");
 
-const github = new Github(
-    nconf.get("GITHUB:TOKEN"),
-    nconf.get("LOSERS"));
-
 const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const handleTestResult = event => testPassed => {
-    if(!testPassed) {
-        console.log("Test was a fail, 2bad so sad.");
-        return Promise.resolve();
-    }
+const color = {
+    true: "green",
+    false: "red"
+};
 
-    console.log("Registering test pass...");
+const handleTestResult = async (event, testPassed) => {
+    console.log("Registering test result...");
+
+    const github = await Github.init(event.installation);
+
     const issueBranchP = event.issue.branch
         ? Promise.resolve(event.issue.branch)
         : github.findIssueBranch(event.issue.number, event.repo)
             .catch(err => console.log(err));
 
-    return github.findUser(event.user)
-        .then(githubUser =>
-            Promise.all([
-                jira.findUsername(githubUser),
-                issueBranchP])
-            .spread((jiraUsername, issueKey) =>
-                jira.addTester(jiraUsername, issueKey)
-                    .then(() => jira.lookupIssue(issueKey)))
-            .then(jiraIssue => hipchat.notify(
-                testPassMessage(githubUser, event, jiraIssue))));
+    const githubUser = await github.findUser(event.user);
+
+    const [jiraUsername, issueKey] = await Promise.all([
+        jira.findUsername(githubUser),
+        issueBranchP]);
+
+    if(testPassed)
+        await jira.addTester(jiraUsername, issueKey);
+
+    var output = testPassMessage(githubUser, event, testPassed);
+    try {
+        output += forIssue(
+            await jira.lookupIssue(issueKey));
+    } catch(e) {
+        console.log(`No issue found: ${e}`);
+    }
+
+    return hipchat.notify(output, {
+        color: color[testPassed]
+    });
 };
 
-const testPassMessage = (user, event, issue) =>
-`${user.name} just successfully tested ${link(event.issue.name, event.url)} for issue ${link(`[${issue.key}] - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`;
+const testPassMessage = ({ name }, { issue, url }, passed) =>
+`${name} just ${passed ? "" : "un" }successfully tested ${link(issue.name, url)}`;
 
 const testResultPattern = /\[Test: (Pass|Fail)\]/;
 const testResults = {
@@ -63,11 +73,14 @@ const parseComment = comment => {
     return Promise.resolve(testResults[match[1]]);
 };
 
-const handler = event => {
-    return parseComment(event.body)
-        .then(handleTestResult(event))
+const handler = async event => {
+    try {
+        const result = await parseComment(event.body);
+        return handleTestResult(event, result);
+    } catch(e) {
         //TODO: fix this later. handle different comment cases properly
-        .catch(() => Promise.resolve());
+        return;
+    }
 };
 
 module.exports = {
