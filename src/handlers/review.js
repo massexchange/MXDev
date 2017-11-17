@@ -32,7 +32,7 @@ const handleReview = async event => {
     const github = await Github.init(event.installation);
 
     const githubUser = await github.findUser(event.user);
-    const user = await jira.findUsername(githubUser);
+    const user = await jira.findUser(githubUser);
 
     if(event.state == "approved")
         await jira.addApprover(user, event.pullRequest.branch);

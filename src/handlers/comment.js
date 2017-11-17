@@ -35,16 +35,28 @@ const handleTestResult = async (event, testPassed) => {
     const githubUser = await github.findUser(event.user);
 
     const [jiraUsername, issueKey] = await Promise.all([
-        jira.findUsername(githubUser),
+        jira.findUser(githubUser),
         issueBranchP]);
 
-    if(testPassed)
+    const issue = await jira.lookupIssue(issueKey);
+
+    const newlyPassed = !issue.testedBy && testPassed;
+    const newlyFailed = issue.testedBy && !testPassed;
+
+    if(newlyPassed)
         await jira.addTester(jiraUsername, issueKey);
+    else if(newlyFailed)
+        await jira.removeTester(jiraUsername, issueKey);
+
+    //only notify if something new happened
+    if(!(newlyPassed || newlyFailed)) {
+        console.log("Comment did not indicate a change in status");
+        return;
+    }
 
     var output = testPassMessage(githubUser, event, testPassed);
     try {
-        output += forIssue(
-            await jira.lookupIssue(issueKey));
+        output += forIssue(issue);
     } catch(e) {
         console.log(`No issue found: ${e}`);
     }

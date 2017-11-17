@@ -4,5 +4,5 @@ const
 
 module.exports = {
     forIssue: issue =>
-        ` for issue ${link(`${issue.key} - ${issue.fields.summary}`, JIRA.issueUrl(issue))}`
+        ` for issue ${link(`${issue.key} - ${issue.summary}`, JIRA.issueUrl(issue))}`
 };

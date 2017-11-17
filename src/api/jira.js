@@ -21,11 +21,61 @@ const addTesterCommand = name => ({
         }]
     }});
 
+const removeTesterCommand = () => ({
+    update: {
+        [testedByField]: [{
+            set: {}
+        }]
+    }});
+
+class User {
+    constructor({ name, emailAddress, displayName }) {
+        this.username = name;
+        this.email = emailAddress;
+        this.name = displayName;
+    }
+}
+
+class Comment {
+    constructor({ id, author, body, created }) {
+        this.id = id;
+        this.author = new User(author);
+        this.body = body;
+        this.created = created;
+    }
+}
+
+class Issue {
+    constructor({ id, key, fields }) {
+        const { status, description, summary, creator, reporter, comment: { comments } } = fields;
+
+        this.id = id;
+        this.key = key;
+
+        this.approvedBy = fields[approvedByField].map(user =>
+            new User(user));
+
+        if(fields[testedByField])
+            this.testedBy = new User(fields[testedByField]);
+
+        this.creator = new User(creator);
+        this.reporter = new User(reporter);
+
+        this.status = status.name;
+
+        this.description = description;
+        this.summary = summary;
+
+        this.comments = comments.map(comment =>
+            new Comment(comment));
+    }
+}
+
 class JIRA {
     constructor(secretSecretJiraCredsShh) {
         this.creds = secretSecretJiraCredsShh;
     }
-    async findUsername(user) {
+    async findUser(user) {
         console.log(`Finding JIRA username for ${user.name}...`);
 
         const users = await request({
@@ -41,7 +91,7 @@ class JIRA {
             return Promise.reject(
                 "No users with that name found! Make sure the user's name in JIRA and Github are the same.");
 
-        return users[0];
+        return new User(users[0]);
     }
     async addApprover({ name }, issueKey) {
         console.log(`Adding ${name} as an approver of ${issueKey} on JIRA...`);
@@ -74,6 +124,21 @@ class JIRA {
             throw new Error(err);
         }
     }
+    async removeTester(issueKey) {
+        console.log(`Removing tested of ${issueKey} on JIRA...`);
+
+        try {
+            await request.put({
+                url: `${jiraAPI}/issue/${issueKey}`,
+                json: true,
+                auth: this.creds,
+                body: removeTesterCommand()
+            });
+            return issueKey;
+        } catch(err) {
+            throw new Error(err);
+        }
+    }
     async lookupIssue(issueKey) {
         console.log(`Looking up ${issueKey} on JIRA...`);
 
@@ -83,7 +148,7 @@ class JIRA {
                 json: true,
                 auth: this.creds
             });
-            return response;
+            return new Issue(response);
         } catch(err) {
             throw new Error(err);
         }
