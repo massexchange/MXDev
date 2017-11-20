@@ -75,13 +75,13 @@ class JIRA {
     constructor(secretSecretJiraCredsShh) {
         this.creds = secretSecretJiraCredsShh;
     }
-    async findUser(user) {
-        console.log(`Finding JIRA username for ${user.name}...`);
+    async findUser({ name }) {
+        console.log(`Finding JIRA username for ${name}...`);
 
         const users = await request({
             url: `${jiraAPI}/user/search`,
             qs: {
-                username: user.name
+                username: name
             },
             json: true,
             auth: this.creds
@@ -93,7 +93,7 @@ class JIRA {
 
         return new User(users[0]);
     }
-    async addApprover({ name }, issueKey) {
+    async addApprover({ name, username }, issueKey) {
         console.log(`Adding ${name} as an approver of ${issueKey} on JIRA...`);
 
         try {
@@ -101,7 +101,7 @@ class JIRA {
                 url: `${jiraAPI}/issue/${issueKey}`,
                 json: true,
                 auth: this.creds,
-                body: addApproverCommand(name)
+                body: addApproverCommand(username)
             });
             return issueKey;
         } catch(err) {
@@ -109,7 +109,7 @@ class JIRA {
             return;
         }
     }
-    async addTester({ name }, issueKey) {
+    async addTester({ name, username }, issueKey) {
         console.log(`Setting ${name} as the tester of ${issueKey} on JIRA...`);
 
         try {
@@ -117,7 +117,7 @@ class JIRA {
                 url: `${jiraAPI}/issue/${issueKey}`,
                 json: true,
                 auth: this.creds,
-                body: addTesterCommand(name)
+                body: addTesterCommand(username)
             });
             return issueKey;
         } catch(err) {
@@ -125,7 +125,7 @@ class JIRA {
         }
     }
     async removeTester(issueKey) {
-        console.log(`Removing tested of ${issueKey} on JIRA...`);
+        console.log(`Removing tester of ${issueKey} on JIRA...`);
 
         try {
             await request.put({

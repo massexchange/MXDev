@@ -18,47 +18,63 @@ const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
 const notMergable = "This PR is not mergeable, are you sure its `ready`?";
 
+const readyMessage = ({ name, login }, { title, url }, added = true) =>
+`${name || login } just ${added ? "" : "un"}marked ready PR ${link(title, url)}`;
+
+const color = {
+    true: "green",
+    false: "yellow"
+};
+
 /*
-    for now, only handling ready labelings
+    only on label:
+        check if the PR has been approved at all (mergeable)
+        if not, leave a comment saying it didnt go through
+        otherwise,
 
-    on label: check if the PR has been approved at all (mergeable)
-    if not, leave a comment saying it didnt go through
+        transition the jira issue (if it exists) to ready
+    only on unlabel:
+        transition the jira issue (if it exists) to in review
 
-    otherwise, transition the jira issue (if it exists)
-    to ready, and report it to hipchat
+    report it to hipchat
 */
-const handle = async event => {
-    console.log("Registering labeling...");
+const handleReady = async ({ label, isPresent, installation, pr, user }) => {
+    console.log(`Registering ${label} ${
+        isPresent
+            ? "addition"
+            : "removal"}...`);
 
-    const github = await Github.init(event.installation);
+    const github = await Github.init(installation);
 
-    if(!event.pr.mergeable) {
+    if(isPresent && !pr.mergeable) {
         console.log("PR is not mergable, notifying owner");
-        return github.comment(event.pr, notMergable);
+        return github.comment(pr, notMergable);
     }
 
-    const githubUser = await github.findUser(event.user);
+    const githubUser = await github.findUser(user);
 
-    var output = readyMessage(githubUser, event.pr);
+    var output = readyMessage(githubUser, pr, isPresent);
     try {
-        const issue = await jira.lookupIssue(event.pr.branch);
-        await jira.transitionIssue(issue, "Mark Ready");
+        const issue = await jira.lookupIssue(pr.branch);
+        await jira.transitionIssue(issue,
+            isPresent
+                ? "Mark Ready"
+                : "Not Ready");
 
         output += forIssue(issue);
     } catch(e) {
         console.log(`No issue found: ${e}`);
     }
 
-    return hipchat.notify(output);
+    return hipchat.notify(output, {
+        color: color[isPresent]
+    });
 };
 
-const readyMessage = ({ name }, { title, url }) =>
-`${name} just marked ready PR ${link(title, url)}`;
-
 module.exports = {
-    matches: ({ isPresent, label }) => isPresent && label == "ready",
+    matches: ({ label }) => label == "ready",
     name: "Label",
     accepts: LabelEvent,
-    handle,
-    irrelevantMessage: "Only care about \"ready\" labelings"
+    handle: handleReady,
+    irrelevantMessage: "Only care about the \"ready\" label"
 };

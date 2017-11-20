@@ -34,7 +34,7 @@ const handleTestResult = async (event, testPassed) => {
 
     const githubUser = await github.findUser(event.user);
 
-    const [jiraUsername, issueKey] = await Promise.all([
+    const [jiraUser, issueKey] = await Promise.all([
         jira.findUser(githubUser),
         issueBranchP]);
 
@@ -44,9 +44,17 @@ const handleTestResult = async (event, testPassed) => {
     const newlyFailed = issue.testedBy && !testPassed;
 
     if(newlyPassed)
-        await jira.addTester(jiraUsername, issueKey);
-    else if(newlyFailed)
-        await jira.removeTester(jiraUsername, issueKey);
+        await jira.addTester(jiraUser, issueKey);
+    else if(newlyFailed) {
+        await jira.removeTester(issueKey);
+
+        try {
+            await github.removeLabel(event, "ready");
+        } catch({ message }) {
+            if(message == "Label does not exist")
+                console.log("PR wasn't labeled that in the first place");
+        }
+    }
 
     //only notify if something new happened
     if(!(newlyPassed || newlyFailed)) {

@@ -76,11 +76,31 @@ class Github {
         }
     }
     async comment({ repo: { owner, name: repo }, number }, message) {
-        console.log(`Commenting on ${owner}/${repo}`);
+        console.log(`Commenting on ${owner}/${repo}#${number}`);
 
         const { data } = await this.api.issues.createComment({
             owner, repo, number,
             body: message
+        });
+
+        return data;
+    }
+    async addLabels({ repo: { owner, name: repo }, number }, ...labels) {
+        console.log(`Labeling ${owner}/${repo}#${number} as ${labels.join(", ")}`);
+
+        const { data } = await this.api.issues.addLabels({
+            owner, repo, number,
+            labels
+        });
+
+        return data;
+    }
+    async removeLabel({ repo: { owner, name: repo }, issue: { number, title } }, label) {
+        console.log(`Removing label ${label} from ${owner}/${repo}#${number}`);
+
+        const { data } = await this.api.issues.removeLabel({
+            owner, repo, number,
+            name: label
         });
 
         return data;
