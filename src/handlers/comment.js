@@ -22,17 +22,17 @@ const color = {
     false: "red"
 };
 
-const handleTestResult = async (event, testPassed) => {
+const handleTestResult = async ({ installation, issue, repo, user }, testPassed) => {
     console.log("Registering test result...");
 
-    const github = await Github.init(event.installation);
+    const github = await Github.init(installation);
 
-    const issueBranchP = event.issue.branch
-        ? Promise.resolve(event.issue.branch)
-        : github.findIssueBranch(event.issue.number, event.repo)
+    const issueBranchP = issue.branch
+        ? Promise.resolve(issue.branch)
+        : github.findIssueBranch(issue.number, repo)
             .catch(err => console.log(err));
 
-    const githubUser = await github.findUser(event.user);
+    const githubUser = await github.findUser(user);
 
     const [jiraUser, issueKey] = await Promise.all([
         jira.findUser(githubUser),
@@ -49,7 +49,7 @@ const handleTestResult = async (event, testPassed) => {
         await jira.removeTester(issueKey);
 
         try {
-            await github.removeLabel(event, "ready");
+            await github.removeLabel({ repo, user }, "ready");
         } catch({ message }) {
             if(message == "Label does not exist")
                 console.log("PR wasn't labeled that in the first place");

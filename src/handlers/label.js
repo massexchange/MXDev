@@ -48,7 +48,10 @@ const handleReady = async ({ label, isPresent, installation, pr, user }) => {
 
     if(isPresent && !pr.mergeable) {
         console.log("PR is not mergable, notifying owner");
-        return github.comment(pr, notMergable);
+
+        return Promise.all([
+            github.comment(pr, notMergable),
+            github.removeLabel(pr, "ready")]);
     }
 
     const githubUser = await github.findUser(user);
