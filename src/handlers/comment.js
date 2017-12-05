@@ -38,10 +38,10 @@ const handleTestResult = async ({ installation, issue, repo, user }, testPassed)
         jira.findUser(githubUser),
         issueBranchP]);
 
-    const issue = await jira.lookupIssue(issueKey);
+    const jiraIssue = await jira.lookupIssue(issueKey);
 
-    const newlyPassed = !issue.testedBy && testPassed;
-    const newlyFailed = issue.testedBy && !testPassed;
+    const newlyPassed = !jiraIssue.testedBy && testPassed;
+    const newlyFailed = jiraIssue.testedBy && !testPassed;
 
     if(newlyPassed)
         await jira.addTester(jiraUser, issueKey);

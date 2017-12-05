@@ -95,7 +95,7 @@ class Github {
 
         return data;
     }
-    async removeLabel({ repo: { owner, name: repo }, issue: { number, title } }, label) {
+    async removeLabel({ repo: { owner, name: repo }, number }, label) {
         console.log(`Removing label ${label} from ${owner}/${repo}#${number}`);
 
         const { data } = await this.api.issues.removeLabel({

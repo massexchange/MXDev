@@ -13,6 +13,7 @@ const parsePrEvent = trigger =>
         label,
         pull_request: { number, html_url,
             head: { ref: branch, repo: { name: repoName, owner: { login: owner } } },
+            base: { ref: target },
             title, mergeable },
         sender: { login }
     }) => {
@@ -27,16 +28,20 @@ const parsePrEvent = trigger =>
             }
         }, login, ...args);
 
+        const prEvent = (...args) => new PREvent(trigger, {
+            branch,
+            target,
+            number,
+            title,
+            url: html_url,
+            mergeable
+        }, login, ...args);
+
         const eventForAction = {
             labeled: labelEvent,
             unlabeled: () => labelEvent(false),
-            opened: (...args) => new PREvent(trigger, {
-                branch,
-                number,
-                title,
-                url: html_url,
-                mergeable
-            }, login, ...args)
+            opened: prEvent,
+            edited: () => prEvent(true)
         };
 
         const eventBuilder = eventForAction[action];
