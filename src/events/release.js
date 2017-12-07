@@ -1,16 +1,7 @@
 const Event = require("../event");
 
 /*
-    Represents a comment on an issue
-
-    user: name of the commenter
-    body: content of the comment
-    issue: issue that was commented on
-        - number
-        - title
-    repo: repository containing the issue
-        - name
-        - owner
+    Represents a JIRA release
 */
 module.exports = class ReleaseEvent extends Event {
     constructor(trigger, id, name, description, startDate, releaseDate, projectId) {

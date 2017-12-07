@@ -32,43 +32,41 @@ const confluence = new Confluence({
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:ANNOUNCEMENTS:TOKEN"));
 
-const handleRelease = release => {
+const handleRelease = async release => {
     console.log("Fetching release issues...");
     const issueP = jira.search(`fixVersion = ${release.name} and project = ${release.project.id}`,
         "summary", "key", "issuetype");
 
     const projectP = jira.getProject(release.project.id);
 
-    return Promise.all([issueP, projectP]).spread(({ issues }, { name: projectName }) => {
-        release.project.name = projectName;
+    const [{ issues }, { name: projectName }] = await Promise.all([issueP, projectP]);
 
-        console.log(`Found ${issues.length} issues`);
+    release.project.name = projectName;
 
-        console.log("Generating release notes...");
-        const releaseDuration = release.dates.end.diff(release.dates.start, "days") + 1;
-        const issueTypes = processIssues(issues);
+    console.log(`Found ${issues.length} issues`);
 
-        const versionName = `MX${projectName} v${release.name}`;
+    console.log("Generating release notes...");
+    const releaseDuration = release.dates.end.diff(release.dates.start, "days") + 1;
+    const issueTypes = processIssues(issues);
 
-        const header = releaseHeader(versionName, release, issues.length);
-        const summary = releaseSummary(release, issues, issueTypes, releaseDuration);
-        const list = issueList(issueTypes);
+    const versionName = `MX${projectName} v${release.name}`;
 
-        const short = shortNotes(header, summary, release.description);
+    const header = releaseHeader(versionName, release, issues.length);
+    const summary = releaseSummary(release, issues, issueTypes, releaseDuration);
+    const list = issueList(issueTypes);
 
-        const notes = releaseNotes(short, list);
+    const short = shortNotes(header, summary, release.description);
 
-        return confluence.getPage(engineeringSpace, "Versions")
-            .then(versionsHome =>
-                confluence.addPage(versionsHome, versionName, notes))
-            .then(versionPage =>
-                hipchat.notify(hipchatNotes(short, versionPage), {
-                    room: "announce" }));
-    });
+    const notes = releaseNotes(short, list);
+
+    const versionsHome = await confluence.getPage(engineeringSpace, "Versions");
+    const versionPage = await confluence.addPage(versionsHome, versionName, notes);
+
+    return hipchat.notify(hipchatNotes(short, versionPage), { room: "announce" });
 };
 
-const processIssues = issues => {
-    return issues.reduce((types, issue) => {
+const processIssues = issues =>
+    issues.reduce((types, issue) => {
         const type = issue.fields.issuetype.name;
         if(!types[type])
             types[type] = [];
@@ -77,7 +75,6 @@ const processIssues = issues => {
 
         return types;
     }, {});
-};
 
 const format = "MMMM Do";
 
@@ -124,6 +121,5 @@ module.exports = {
     matches: event => true,
     name: "Release",
     accepts: ReleaseEvent,
-    handle: handleRelease,
-    irrelevantMessage: "Was not an approval, too bad."
+    handle: handleRelease
 };

@@ -1,4 +1,4 @@
-const Event = require("../event");
+const GithubEvent = require("./github");
 
 /*
     Represents a PR review
@@ -12,7 +12,7 @@ const Event = require("../event");
         - name
         - owner
 */
-module.exports = class ReviewEvent extends Event {
+module.exports = class ReviewEvent extends GithubEvent {
     constructor(trigger, user, pullRequest, state, url) {
         super(trigger);
 
