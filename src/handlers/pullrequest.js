@@ -16,20 +16,22 @@ const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const handle = async event => {
-    const github = await Github.init(event.installation);
+const handle = async ({ installation, user, pr, existing }) => {
+    const github = await Github.init(installation);
 
-    const githubUser = await github.findUser(event.user);
+    const githubUser = await github.findUser(user);
 
-    var output = openMessage(githubUser, event.pr);
     try {
-        const issue = await jira.lookupIssue(event.pr.branch);
-        output += forIssue(issue);
+        const issue = await jira.lookupIssue(pr.branch);
+        if(!existing)
+            return hipchat.notify(
+                openMessage(githubUser, pr) +
+                forIssue(issue));
+
+        return jira.setFixVersion(pr.target.replace("release/", ""), issue.key);
     } catch(e) {
         console.log(`No issue found: ${e}`);
     }
-
-    return hipchat.notify(output);
 };
 
 const openMessage = ({ name }, { title, url }) =>

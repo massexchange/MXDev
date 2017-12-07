@@ -22,29 +22,49 @@ const color = {
     false: "red"
 };
 
-const handleTestResult = async (event, testPassed) => {
+const handleTestResult = async ({ installation, issue, repo, user }, testPassed) => {
     console.log("Registering test result...");
 
-    const github = await Github.init(event.installation);
+    const github = await Github.init(installation);
 
-    const issueBranchP = event.issue.branch
-        ? Promise.resolve(event.issue.branch)
-        : github.findIssueBranch(event.issue.number, event.repo)
+    const issueBranchP = issue.branch
+        ? Promise.resolve(issue.branch)
+        : github.findIssueBranch(issue.number, repo)
             .catch(err => console.log(err));
 
-    const githubUser = await github.findUser(event.user);
+    const githubUser = await github.findUser(user);
 
-    const [jiraUsername, issueKey] = await Promise.all([
-        jira.findUsername(githubUser),
+    const [jiraUser, issueKey] = await Promise.all([
+        jira.findUser(githubUser),
         issueBranchP]);
 
-    if(testPassed)
-        await jira.addTester(jiraUsername, issueKey);
+    const jiraIssue = await jira.lookupIssue(issueKey);
+
+    const newlyPassed = !jiraIssue.testedBy && testPassed;
+    const newlyFailed = jiraIssue.testedBy && !testPassed;
+
+    if(newlyPassed)
+        await jira.addTester(jiraUser, issueKey);
+    else if(newlyFailed) {
+        await jira.removeTester(issueKey);
+
+        try {
+            await github.removeLabel({ repo, user }, "ready");
+        } catch({ message }) {
+            if(message == "Label does not exist")
+                console.log("PR wasn't labeled that in the first place");
+        }
+    }
+
+    //only notify if something new happened
+    if(!(newlyPassed || newlyFailed)) {
+        console.log("Comment did not indicate a change in status");
+        return;
+    }
 
     var output = testPassMessage(githubUser, event, testPassed);
     try {
-        output += forIssue(
-            await jira.lookupIssue(issueKey));
+        output += forIssue(issue);
     } catch(e) {
         console.log(`No issue found: ${e}`);
     }

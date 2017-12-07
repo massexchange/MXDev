@@ -53,6 +53,10 @@ const buildResponse = (code, body) => ({
     body: JSON.stringify(body)
 });
 
+const errMsg = ({ message, stack }) =>
+`Error: ${message}
+${stack}`;
+
 exports.handler = async (event, context, callback) => {
     try {
         const result = await handleWebhook(event);
@@ -65,7 +69,7 @@ exports.handler = async (event, context, callback) => {
         console.log(response);
         callback(null, response);
     } catch(err) {
-        console.log(`Error: ${err}`);
+        console.log(errMsg(err));
         callback(null, buildResponse(500, {
             error: err.message
         }));

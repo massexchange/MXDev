@@ -8,10 +8,11 @@ const GithubEvent = require("./github");
     user: name of the labeler
 */
 module.exports = class PREvent extends GithubEvent {
-    constructor(trigger, pr, user) {
+    constructor(trigger, pr, user, existing = false) {
         super(trigger);
 
         this.pr = pr;
         this.user = user;
+        this.existing = existing;
     }
 };
