@@ -47,12 +47,12 @@ class Comment {
 
 class Issue {
     constructor({ id, key, fields }) {
-        const { status, description, summary, creator, reporter, comment: { comments } } = fields;
+        const { status, description, summary, creator, reporter, comment: { comments = [] } } = fields;
 
         this.id = id;
         this.key = key;
 
-        this.approvedBy = fields[approvedByField].map(user =>
+        this.approvedBy = (fields[approvedByField] || []).map(user =>
             new User(user));
 
         if(fields[testedByField])
@@ -143,24 +143,22 @@ class JIRA {
         console.log(`Looking up ${issueKey} on JIRA...`);
 
         try {
-            const response = await request.get({
+            return new Issue(await request.get({
                 url: `${jiraAPI}/issue/${issueKey}`,
                 json: true,
                 auth: this.creds
-            });
-            return new Issue(response);
+            }));
         } catch(err) {
             throw new Error(err);
         }
     }
     async getTransitions({ key }) {
         try {
-            const response = await request.get({
+            return await request.get({
                 url: `${jiraAPI}/issue/${key}/transitions`,
                 json: true,
                 auth: this.creds
             });
-            return response;
         } catch(err) {
             throw new Error(err);
         }
@@ -178,14 +176,13 @@ class JIRA {
                 throw new Error(
                     `Transition ${target} not available for issue ${issue.key}`);
 
-            const response = await request.post({
+            return await request.post({
                 url: `${jiraAPI}/issue/${issue.key}/transitions`,
                 json: true,
                 auth: this.creds,
                 body: { transition: {
                     id: targetTransition.id } }
             });
-            return response;
         } catch(err) {
             throw new Error(err);
         }
