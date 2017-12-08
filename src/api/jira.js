@@ -28,6 +28,13 @@ const removeTesterCommand = () => ({
         }]
     }});
 
+const setFixVersionCommand = version => ({
+    update: {
+        fixVersions: [{
+            set: [{ name: version }]
+        }]
+    }});
+
 class User {
     constructor({ name, emailAddress, displayName }) {
         this.username = name;
@@ -133,6 +140,21 @@ class JIRA {
                 json: true,
                 auth: this.creds,
                 body: removeTesterCommand()
+            });
+            return issueKey;
+        } catch(err) {
+            throw new Error(err);
+        }
+    }
+    async setFixVersion(version, issueKey) {
+        console.log(`Setting ${version} as the fix version of ${issueKey} on JIRA...`);
+
+        try {
+            await request.put({
+                url: `${jiraAPI}/issue/${issueKey}`,
+                json: true,
+                auth: this.creds,
+                body: setFixVersionCommand(version)
             });
             return issueKey;
         } catch(err) {
