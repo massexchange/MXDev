@@ -22,6 +22,7 @@ const handleMXControlTask = async (event) => {
 
     msgMXControlRoom(logline);
 
+    //If status text, wait for response
     if (statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
         console.log(statusResponse);
@@ -36,6 +37,7 @@ const handleMXControlTask = async (event) => {
         return;
     }
 
+    //Else, send the task and let lambda die.
     MXControl.runTask(task).catch(err =>{
         //task failed for some reason -- shoot errors
         console.log(err);
