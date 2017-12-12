@@ -22,8 +22,10 @@ const color = {
     false: "red"
 };
 
-const handleTestResult = async ({ installation, issue, url, repo, user }, testPassed) => {
+const handleTestResult = async (event, testPassed) => {
     console.log("Registering test result...");
+
+    const { installation, issue, url, repo, user } = event;
 
     const github = await Github.init(installation);
 
@@ -38,33 +40,33 @@ const handleTestResult = async ({ installation, issue, url, repo, user }, testPa
         jira.findUser(githubUser),
         issueBranchP]);
 
-    const jiraIssue = await jira.lookupIssue(issueKey);
-
-    const newlyPassed = !jiraIssue.testedBy && testPassed;
-    const newlyFailed = jiraIssue.testedBy && !testPassed;
-
-    if(newlyPassed)
-        await jira.addTester(jiraUser, issueKey);
-    else if(newlyFailed) {
-        await jira.removeTester(issueKey);
-
-        try {
-            await github.removeLabel({ repo, user }, "ready");
-        } catch({ message }) {
-            if(message == "Label does not exist")
-                console.log("PR wasn't labeled that in the first place");
-        }
-    }
-
-    //only notify if something new happened
-    if(!(newlyPassed || newlyFailed)) {
-        console.log("Comment did not indicate a change in status");
-        return;
-    }
-
-    var output = testPassMessage(githubUser, { issue, url }, testPassed);
+    var output = testResultMessage(githubUser, { issue, url }, testPassed);
     try {
-        output += forIssue(issue);
+        const jiraIssue = await jira.lookupIssue(issueKey);
+
+        output += forIssue(jiraIssue);
+
+        const newlyPassed = !jiraIssue.testedBy && testPassed;
+        const newlyFailed = jiraIssue.testedBy && !testPassed;
+
+        if(newlyPassed)
+            await jira.addTester(jiraUser, issueKey);
+        else if(newlyFailed) {
+            await jira.removeTester(issueKey);
+
+            try {
+                await github.removeLabel({ repo, number: issue.number }, "ready");
+            } catch({ message }) {
+                if(message == "Label does not exist")
+                    console.log("PR wasn't labeled that in the first place");
+            }
+        }
+
+        //only notify if something new happened
+        if(!(newlyPassed || newlyFailed)) {
+            console.log("Comment did not indicate a change in status");
+            return;
+        }
     } catch(e) {
         console.log(`No issue found: ${e}`);
     }
@@ -74,7 +76,7 @@ const handleTestResult = async ({ installation, issue, url, repo, user }, testPa
     });
 };
 
-const testPassMessage = ({ name }, { issue, url }, passed) =>
+const testResultMessage = ({ name }, { issue, url }, passed) =>
 `${name} just ${passed ? "" : "un" }successfully tested ${link(issue.name, url)}`;
 
 const testResultPattern = /\[Test: (Pass|Fail)\]/;

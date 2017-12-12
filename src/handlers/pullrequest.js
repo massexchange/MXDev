@@ -23,10 +23,12 @@ const handle = async ({ installation, user, pr, existing }) => {
 
     try {
         const issue = await jira.lookupIssue(pr.branch);
-        if(!existing)
+        if(!existing) {
+            await github.comment(pr, `This PR is ${forIssue(issue)}`);
             return hipchat.notify(
                 openMessage(githubUser, pr) +
                 forIssue(issue));
+        }
 
         return jira.setFixVersion(pr.target.replace("release/", ""), issue.key);
     } catch(e) {
