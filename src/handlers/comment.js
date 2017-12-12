@@ -22,7 +22,7 @@ const color = {
     false: "red"
 };
 
-const handleTestResult = async ({ installation, issue, repo, user }, testPassed) => {
+const handleTestResult = async ({ installation, issue, url, repo, user }, testPassed) => {
     console.log("Registering test result...");
 
     const github = await Github.init(installation);
@@ -62,7 +62,7 @@ const handleTestResult = async ({ installation, issue, repo, user }, testPassed)
         return;
     }
 
-    var output = testPassMessage(githubUser, event, testPassed);
+    var output = testPassMessage(githubUser, { issue, url }, testPassed);
     try {
         output += forIssue(issue);
     } catch(e) {
