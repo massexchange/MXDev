@@ -8,7 +8,7 @@ nconf.env("_");
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 const msgMXControlRoom =
-    (message) => hipchat.notify(message, {room: "MXControl"});
+    async message => hipchat.notify(message, {room: "MXControl"});
 
 const formatStatusResponse = statusJSON => {
     //flatten if necessary
@@ -30,7 +30,7 @@ ${InstanceSize}
 ${InstanceAddress}
 `;
 
-const handleMXControlTask = async (event) => {
+const handleMXControlTask = async event => {
     const statusVerbs = ["status","info","scry","check"];
 
     const task = event.task;
@@ -46,7 +46,7 @@ const handleMXControlTask = async (event) => {
     if (statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
         const formattedResponse = formatStatusResponse(statusResponse);
-        formattedResponse.map(res => msgMXControlRoom(res));
+        formattedResponse.map(async res => await msgMXControlRoom(res));
         return;
     }
 
@@ -58,7 +58,6 @@ const handleMXControlTask = async (event) => {
         msgMXControlRoom(JSON.stringify(err));
         msgMXControlRoom("Something went wrong with the operation. Ops has been notified.");
     });
-
 };
 
 module.exports = {
