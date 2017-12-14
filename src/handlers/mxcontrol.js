@@ -16,21 +16,19 @@ const formatStatusResponse = statusJSON => {
         ? statusJSON.reduce((agg, curr) => agg.concat(curr), [])
         : statusJSON;
 
-    //get rid of extra information
-    const simpleStatus =
-        flatStatus.map((status) => {
-            return {}
-        })
+    return flatStatus.map(parseStatusText);
+};
 
-    const formatStatus = simpleStatus.map(status =>
-`##${InstanceName}
+const parseStatusText = ({
+    InstanceName,
+    InstanceState,
+    InstanceSize,
+    InstanceAddress
+}) =>`## ${InstanceName}
 ${InstanceState}
 ${InstanceSize}
 ${InstanceAddress}
-`);
-
-    return formatStatus;
-};
+`;
 
 const handleMXControlTask = async (event) => {
     const statusVerbs = ["status","info","scry","check"];
@@ -48,7 +46,7 @@ const handleMXControlTask = async (event) => {
     if (statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
         const formattedResponse = formatStatusResponse(statusResponse);
-        formattedResponse.map(res => msgMXControlRoom(JSON.stringify(formattedResponse)));
+        formattedResponse.map(res => msgMXControlRoom(res));
         return;
     }
 
