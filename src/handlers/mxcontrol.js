@@ -10,6 +10,28 @@ const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 const msgMXControlRoom =
     (message) => hipchat.notify(message, {room: "MXControl"});
 
+const formatStatusResponse = statusJSON => {
+    //flatten if necessary
+    const flatStatus = Array.isArray(statusJSON[0])
+        ? statusJSON.reduce((agg, curr) => agg.concat(curr), [])
+        : statusJSON;
+
+    //get rid of extra information
+    const simpleStatus =
+        flatStatus.map((status) => {
+            return {}
+        })
+
+    const formatStatus = simpleStatus.map(status =>
+`##${InstanceName}
+${InstanceState}
+${InstanceSize}
+${InstanceAddress}
+`);
+
+    return formatStatus;
+};
+
 const handleMXControlTask = async (event) => {
     const statusVerbs = ["status","info","scry","check"];
 
@@ -25,15 +47,8 @@ const handleMXControlTask = async (event) => {
     //If status text, wait for response
     if (statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
-        console.log(statusResponse);
-        msgMXControlRoom(
-            JSON.stringify(statusResponse)
-                .replace(/\[|\]|\}/g, "")
-                .replace(/,/g, "\n")
-                .replace(/\{/g, "\n--> ")
-                .replace(/"/g, "")
-                .replace(/:/g, ": ")
-        );
+        const formattedResponse = formatStatusResponse(statusResponse);
+        formattedResponse.map(res => msgMXControlRoom(JSON.stringify(formattedResponse)));
         return;
     }
 
