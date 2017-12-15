@@ -12,7 +12,8 @@ const
     Github = require("./api/github"),
 
     releaseHook = require("./hooks/release"),
-    githubHook = require("./hooks/github");
+    githubHook = require("./hooks/github"),
+    hipchatHook = require("./hooks/hipchat");
 
 nconf.env("_");
 
@@ -22,12 +23,13 @@ const LOG = message => {
 
 const hooks = {
     release: releaseHook,
-    github: githubHook
+    github: githubHook,
+    hipchat: hipchatHook
 };
 const handleWebhook = request => {
-    LOG("Received webhook!");
-    const trigger = nconf.get("dev")
-        ? request.body
+    LOG("Received webhook!");           //ENV VAR BOOLS OPERATE ON THE
+    const trigger = nconf.get("dev")    //PRESENCE OF ANY STRING
+        ? request.body                  //"TRUE" AND "FALSE" WILL BOTH BE TRUE.
         : JSON.parse(request.body);
 
     if(Github.isPingEvent(trigger)) {
