@@ -29,7 +29,6 @@ const parseHipchatTrigger = trigger =>
             : null;
 
         const events = [];
-        console.log(commandArgs);
 
         if (commandArgs[0] == "/mxcontrol")
             events.push(new MXControlEvent(
@@ -43,45 +42,11 @@ const parseHipchatTrigger = trigger =>
         return events;
     })(trigger);
 
-// const parseHipchatTrigger = (trigger) => {
-//
-//     const simpleTrigger = simplifyHipchatTrigger(trigger);
-//
-//     const events = [];
-//
-//     if (simpleTrigger.event == "room_message") {
-//         const commandArgs = simpleTrigger.message.split(" ");
-//
-//         if (commandArgs[0] == "/mxcontrol")
-//             events.push(new MXControlEvent(
-//                 trigger,
-//                 commandArgs[1], //action
-//                 commandArgs[2], //targetType
-//                 commandArgs[3], //target
-//                 commandArgs[4]  //size
-//             ));
-//     }
-//
-//     return events;
-// };
-
-// const simplifyHipchatTrigger = (trigger) => {
-//     return {
-//         event: trigger.event,
-//         message: trigger.item.message.message,
-//         from: {
-//             id: trigger.item.message.from.id,
-//             mentionName: trigger.item.message.from.mention_name,
-//             name: trigger.item.message.from.name
-//         }
-//     };
-// };
-
 
 module.exports = new Hook(
     [MXControlHandler],
     parseHipchatTrigger,
     (trigger) => {
         console.log("Recieved Hipchat Message:");
-        console.log(trigger);
+        console.log(trigger.item.message.message);
     });
