@@ -9,7 +9,7 @@ const MXControlHandler = require("../handlers/mxcontrol");
 //and returns the result of a
 //the result of another function which does some destructuring
 //when called on the given trigger, which is passed into said function
-//w/ destructuring on the last line of this function.
+//w/ destructuring on the last line of this function, after the return.
 const parseHipchatTrigger = trigger =>
     (({
         event,
@@ -29,6 +29,7 @@ const parseHipchatTrigger = trigger =>
             : null;
 
         const events = [];
+        console.log(commandArgs);
 
         if (commandArgs[0] == "/mxcontrol")
             events.push(new MXControlEvent(
@@ -38,6 +39,8 @@ const parseHipchatTrigger = trigger =>
                 commandArgs[3], //target
                 commandArgs[4]  //size
             ));
+
+        return events;
     })(trigger);
 
 // const parseHipchatTrigger = (trigger) => {
