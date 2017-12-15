@@ -80,5 +80,5 @@ module.exports = new Hook(
     parseHipchatTrigger,
     (trigger) => {
         console.log("Recieved Hipchat Message:");
-        console.log(simplifyHipchatTrigger(trigger));
+        console.log(trigger);
     });
