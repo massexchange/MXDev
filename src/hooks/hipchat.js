@@ -45,6 +45,6 @@ module.exports = new Hook(
     [MXControlHandler],
     parseHipchatTrigger,
     (trigger) => {
-        console.log("Recieved Hipchat Message:");
+        console.log(`Recieved Hipchat Message from ${trigger.item.message.from.name}:`);
         console.log(trigger.item.message.message);
     });
