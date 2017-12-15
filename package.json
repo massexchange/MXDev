@@ -17,6 +17,7 @@
     "jsonwebtoken": "^8.1.0",
     "markdown2confluence-cws": "^2.0.2",
     "marked": "^0.3.6",
+    "minimist": "^1.2.0",
     "moment": "^2.18.1",
     "mxcontrol": "github:massexchange/mxcontrol",
     "nconf": "^0.8.4",

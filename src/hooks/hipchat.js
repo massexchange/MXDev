@@ -2,14 +2,16 @@ const Hook = require("../hook");
 
 const MXControlEvent = require("../events/mxcontrol");
 const MXControlHandler = require("../handlers/mxcontrol");
+const minimist = require("minimist");
 
 //a primer to this type of function
 //(cause this shit is difficult the first time)
 //I'm definining a function here that takes in a trigger,
-//and returns the result of a
-//the result of another function which does some destructuring
+//and returns the result of another function which does some destructuring
 //when called on the given trigger, which is passed into said function
-//w/ destructuring on the last line of this function, after the return.
+//w/ destructuring on the last line of this function, after the return of the
+//inner function.
+
 const parseHipchatTrigger = trigger =>
     (({
         event,
@@ -24,20 +26,17 @@ const parseHipchatTrigger = trigger =>
             }
         }
     }) => {
-        const commandArgs = (event == "room_message")
-            ? message.split(" ")
-            : null;
-
         const events = [];
+        let command, args;
 
-        if (commandArgs[0] == "/mxcontrol")
-            events.push(new MXControlEvent(
-                trigger,
-                commandArgs[1], //action
-                commandArgs[2], //targetType
-                commandArgs[3], //target
-                commandArgs[4]  //size
-            ));
+        if (event == "room_message") {
+            const msgContent = message.split(" ");
+            command = msgContent[0].slice(1);
+            args = minimist(msgContent.slice(1));
+        }
+
+        if (command == "mxcontrol")
+            events.push(new MXControlEvent(trigger, args));
 
         return events;
     })(trigger);
