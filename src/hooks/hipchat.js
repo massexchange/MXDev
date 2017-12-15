@@ -35,7 +35,7 @@ const parseHipchatTrigger = trigger =>
         }
 
         if (command == "mxcontrol")
-            events.push(new MXControlEvent(trigger, ...args));
+            events.push(new MXControlEvent(trigger,...args._));
 
         return events;
     })(trigger);
