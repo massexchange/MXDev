@@ -20,8 +20,31 @@ const formatStatusResponse = statusJSON => {
     return flatStatus.map(parseStatusText);
 };
 
-const checkEnvironmentUsingStatusResponse = async statusJSON => {
+const checkEnvironmentUsingStatusResponse = async (statusJSON, envName) => {
+    const flatStatus = Array.isArray(statusJSON[0])
+        ? statusJSON
+            .reduce((agg, curr) => agg.concat(curr), [])
+            .filter(obj => obj.InstanceEnvironment == envName)
+        : statusJSON.filter(obj => obj.InstanceEnvironment == envName);
 
+    const backend = flatStatus.filter(obj =>
+        obj.InstanceApplication == "MXBackend")[0];
+
+    const frontend = flatStatus.filter(obj =>
+        obj.InstanceApplication == "MXWeb")[0];
+
+    const db = flatStatus.filter(obj =>
+        obj.InstanceApplication == "db")[0];
+
+    const backendUp = backend.InstanceState == "running";
+    const frontendUp = frontend.InstanceState == "running";
+    const dbUp = db.InstanceState == "available";
+
+    const frontendAddr = frontend.InstanceAddress;
+    const {address} = await dnsLookup(`${envName}.massexchange.com`);
+    const addressReachable = frontendAddr == address;
+
+    return (backendUp && frontendUp && dbUp && addressReachable)
 }
 
 const parseStatusText = ({
@@ -38,7 +61,7 @@ ${InstanceAddress}
 const handleMXControlTask = async event => {
     const statusVerbs = ["status","info","scry","check"];
 
-    const useFullCLI = debug;
+    const useFullCLI = event.debug;
 
     const task = event.task;
     const targetName = task.instance || task.environment || task.database;
@@ -56,9 +79,16 @@ const handleMXControlTask = async event => {
         return;
     }
 
-    if (!useFullCLI && statusVerbs.includes(action)){
+    if (!useFullCLI && targetName && statusVerbs.includes(action)){
         const statusResponse = await MXControl.runTask(task);
-        //Check that the
+        const isEnvironmentReady =
+            await checkEnvironmentUsingStatusResponse(statusResponse, targetName);
+
+        (isEnvironmentReady)
+            ? await msgMXControlRoom(`${targetName}.massexchange.com is READY`)
+            : await msgMXControlRoom(`${targetName}.massexchange.com is NOT READY.`)
+
+        return;
     }
 
     //
