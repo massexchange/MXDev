@@ -3,6 +3,7 @@ const MXControlEvent = require("../events/mxcontrol");
 const Hipchat = require("../api/hipchat");
 const MXControl = require("mxcontrol");
 const Promise = require("bluebird");
+const dnsLookup = Promise.promisify(require("dns").lookup);
 
 nconf.env("_");
 
@@ -19,6 +20,10 @@ const formatStatusResponse = statusJSON => {
     return flatStatus.map(parseStatusText);
 };
 
+const checkEnvironmentUsingStatusResponse = async statusJSON => {
+
+}
+
 const parseStatusText = ({
     InstanceName,
     InstanceState,
@@ -33,6 +38,8 @@ ${InstanceAddress}
 const handleMXControlTask = async event => {
     const statusVerbs = ["status","info","scry","check"];
 
+    const useFullCLI = debug;
+
     const task = event.task;
     const targetName = task.instance || task.environment || task.database;
     const action = task.action.toLowerCase();
@@ -42,13 +49,19 @@ const handleMXControlTask = async event => {
 
     msgMXControlRoom(logline);
 
-    //If status text, wait for response
-    if (statusVerbs.includes(action)) {
+    if (useFullCLI && statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
         const formattedResponse = formatStatusResponse(statusResponse);
         formattedResponse.map(async res => await msgMXControlRoom(res));
         return;
     }
+
+    if (!useFullCLI && statusVerbs.includes(action)){
+        const statusResponse = await MXControl.runTask(task);
+        //Check that the
+    }
+
+    //
 
     //Else, send the task and let lambda die.
     MXControl.runTask(task).catch(err =>{
