@@ -13,39 +13,47 @@ module.exports = class MXControlEvent extends Event {
         super(trigger);
 
         const args = _;
+        this.debug = debug; //TODO: expose full CLI, not simplified
+        this.sudo = sudo;   //TODO: restrict doing things with certain targets
 
-        if (sudo)
-            debug = true; //sudo means non-status operations allowed on app
+        if (debug) {
+            //If Debug mode is on, full mxcontrol cli is exposed in hipchatNotes
+                let controlTask = {
+                    action: action
+                };
 
+                //Adapted from MXControl/CLI.js
+                if (size) controlTask = Object.assign({size: size}, controlTask);
 
+                this.task =
+                ["env", "environment"].includes(targetType)
+                    ?  Object.assign({environment: target}, controlTask)
+                    : ["inst", "instance"].includes(targetType)
 
-        //If Debug mode is on, full mxcontrol cli is exposed in hipchatNotes
+                        ? Object.assign({instance: target}, controlTask)
+                        : ["db", "database"].includes(targetType)
 
-        //Otherwise, simplified cli is exposed
-        // -- operations don't require target type
-        // -- only whole-environment operations allowed (no resizes)
-        // -- outputs are simplified
+                            ? Object.assign({database: target}, controlTask)
+                            : console.log("Invalid Target Type.");
 
-        if (debug) { //Adapted, but not copied, from mxcontrol/cli.js
-
+                return
+            }
         }
 
-    //     let controlTask = {
-    //         action: action
-    //     };
-    //
-    //     //Adapted from MXControl/CLI.js
-    //     if (size) controlTask = Object.assign({size: size}, controlTask);
-    //
-    //     this.task =
-    //     ["env", "environment"].includes(targetType)
-    //         ?  Object.assign({environment: target}, controlTask)
-    //         : ["inst", "instance"].includes(targetType)
-    //
-    //             ? Object.assign({instance: target}, controlTask)
-    //             : ["db", "database"].includes(targetType)
-    //
-    //                 ? Object.assign({database: target}, controlTask)
-    //                 : console.log("Invalid Target Type.");
-    // }
+        //Normal simplified operation -- be simple.
+        //Arguments come in from args const, not flags.
+        // -- operations don't require target type
+        // -- only whole-environment operations allowed (no resizes)
+        // -- outputs are simplified -- handle outputs elsewhere
+
+        //args: [action, target]
+        this.task = {
+            action: args[0],
+            environment: args[1]
+        }
+
+
+
+
+
 };
