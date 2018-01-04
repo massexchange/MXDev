@@ -38,13 +38,11 @@ module.exports = class MXControlEvent extends Event {
 
                 return
             }
-        }
 
         //Normal simplified operation -- be simple.
         //Arguments come in from args const, not flags.
-        // -- operations don't require target type
         // -- only whole-environment operations allowed (no resizes)
-        // -- outputs are simplified -- handle outputs elsewhere
+        // -- outputs are simplified -- handled outputs elsewhere
 
         //args: [action, target]
         this.task = {
@@ -52,8 +50,6 @@ module.exports = class MXControlEvent extends Event {
             environment: args[1]
         }
 
-
-
-
+    }
 
 };
