@@ -44,7 +44,6 @@ module.exports = class MXControlEvent extends Event {
             action: args[0],
             environment: args[1]
         };
-
     }
 
 };

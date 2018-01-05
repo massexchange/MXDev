@@ -11,41 +11,13 @@ const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 const msgMXControlRoom =
     async message => hipchat.notify(message, {room: "MXControl"});
 
-const formatStatusResponse = statusJSON => {
-    //flatten if necessary
-    const flatStatus = Array.isArray(statusJSON[0])
+const flattenStatus = statusJSON =>
+    Array.isArray(statusJSON[0])
         ? statusJSON.reduce((agg, curr) => agg.concat(curr), [])
         : statusJSON;
 
-    return flatStatus.map(parseStatusText);
-};
-
-const checkEnvironmentUsingStatusResponse = async (statusJSON, envName) => {
-    const flatStatus = Array.isArray(statusJSON[0])
-        ? statusJSON
-            .reduce((agg, curr) => agg.concat(curr), [])
-            .filter(obj => obj.InstanceEnvironment == envName)
-        : statusJSON.filter(obj => obj.InstanceEnvironment == envName);
-
-    const backend = flatStatus.filter(obj =>
-        obj.InstanceApplication == "MXBackend")[0];
-
-    const frontend = flatStatus.filter(obj =>
-        obj.InstanceApplication == "MXWeb")[0];
-
-    const db = flatStatus.filter(obj =>
-        obj.InstanceApplication == "db")[0];
-
-    const backendUp = backend.InstanceState == "running";
-    const frontendUp = frontend.InstanceState == "running";
-    const dbUp = db.InstanceState == "available";
-
-    const frontendAddr = frontend.InstanceAddress;
-    const {address} = await dnsLookup(`${envName}.massexchange.com`);
-    const addressReachable = frontendAddr == address;
-
-    return (backendUp && frontendUp && dbUp && addressReachable);
-};
+const formatStatusResponse = statusJSON =>
+    parseStatusText(flattenStatus(statusJSON));
 
 const parseStatusText = ({
     InstanceName,
@@ -57,6 +29,46 @@ ${InstanceState}
 ${InstanceSize}
 ${InstanceAddress}
 `;
+
+const checkEnvironmentUsingStatusResponse = async(statusJSON, envName) => {
+    const errors = [];
+
+    const isEnvironmentMember = obj =>
+        obj.InstanceEnvironment == envName
+        || obj.InstanceName == `mxenvironment-${envName}`;
+
+    const flatStatus = flattenStatus(statusJSON).filter(isEnvironmentMember);
+
+    if (flatStatus.length == 0) {
+        errors.push(`Environment ${envName} doesn't exist!`);
+        return errors;
+    }
+
+    const backend = flatStatus.filter(obj =>
+        obj.InstanceApplication == "MXBackend")[0];
+
+    const frontend = flatStatus.filter(obj =>
+        obj.InstanceApplication == "MXWeb")[0];
+
+    const db = flatStatus.filter(obj =>
+        obj.InstanceName == `mxenvironment-${envName}`)[0];
+
+    const addressFromDNS = await dnsLookup(`${envName}.massexchange.com`);
+
+    if (backend.InstanceState != "running")
+        errors.push("The backend is down.");
+
+    if (frontend.InstanceState != "running")
+        errors.push("The frontend is down");
+
+    if (db.InstanceState != "available")
+        errors.push("The database is unavailable");
+
+    if (frontend.InstanceAddress != addressFromDNS && frontend.InstanceState == "running")
+        errors.push("There is an error in the enviroments DNS configuration");
+
+    return errors;
+};
 
 const handleMXControlTask = async event => {
     const statusVerbs = ["status","info","scry","check"];
@@ -72,26 +84,28 @@ const handleMXControlTask = async event => {
 
     msgMXControlRoom(logline);
 
-    if (useFullCLI && statusVerbs.includes(action)) {
+    if (statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
-        const formattedResponse = formatStatusResponse(statusResponse);
-        formattedResponse.map(async res => await msgMXControlRoom(res));
+
+        if (useFullCLI)
+            formatStatusResponse(statusResponse)
+                .map(async res => await msgMXControlRoom(res));
+
+        if (!useFullCLI && targetName) {
+            const environmentErrors =
+                await checkEnvironmentUsingStatusResponse(statusResponse, targetName);
+
+            if (environmentErrors.length != 0) {
+                await msgMXControlRoom(`${targetName}.massexchange.com is NOT READY.`);
+                environmentErrors.map(async err => await msgMXControlRoom(err));
+
+            } else await msgMXControlRoom(`${targetName}.massexchange.com is READY`);
+        }
+
+        else await msgMXControlRoom("Please specify an environment");
+
         return;
     }
-
-    if (!useFullCLI && targetName && statusVerbs.includes(action)) {
-        const statusResponse = await MXControl.runTask(task);
-        const isEnvironmentReady =
-            await checkEnvironmentUsingStatusResponse(statusResponse, targetName);
-
-        (isEnvironmentReady)
-            ? await msgMXControlRoom(`${targetName}.massexchange.com is READY`)
-            : await msgMXControlRoom(`${targetName}.massexchange.com is NOT READY.`);
-
-        return;
-    }
-
-    //
 
     //Else, send the task and let lambda die.
     MXControl.runTask(task).catch(err =>{
