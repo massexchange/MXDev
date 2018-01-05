@@ -33,6 +33,7 @@ const parseHipchatTrigger = trigger =>
             const msgContent = message.split(" ");
             command = msgContent[0].slice(1);
             args = minimist(msgContent.slice(1));
+            console.log(args);
         }
 
         if (command == "mxcontrol")

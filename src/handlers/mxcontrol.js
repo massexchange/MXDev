@@ -36,6 +36,7 @@ const checkEnvironmentUsingStatusResponse = async(statusJSON, envName) => {
     const isEnvironmentMember = obj =>
         obj.InstanceEnvironment == envName
         || obj.InstanceName == `mxenvironment-${envName}`;
+    console.log("statusJSON:", statusJSON);
 
     const flatStatus = flattenStatus(statusJSON).filter(isEnvironmentMember);
 
@@ -85,7 +86,12 @@ const handleMXControlTask = async event => {
     msgMXControlRoom(logline);
 
     if (statusVerbs.includes(action)) {
-        const statusResponse = await MXControl.runTask(task);
+        let statusResponse = [];
+        try {
+            statusResponse = await MXControl.runTask(task);
+        } catch(e) {
+            console.log(`${targetName} not found.`);
+        }
 
         if (useFullCLI)
             formatStatusResponse(statusResponse)
@@ -100,9 +106,7 @@ const handleMXControlTask = async event => {
                 environmentErrors.map(async err => await msgMXControlRoom(err));
 
             } else await msgMXControlRoom(`${targetName}.massexchange.com is READY`);
-        }
-
-        else await msgMXControlRoom("Please specify an environment");
+        } else await msgMXControlRoom("Please specify an environment");
 
         return;
     }
