@@ -17,27 +17,22 @@ module.exports = class MXControlEvent extends Event {
         this.sudo = sudo;   //TODO: restrict doing things with certain targets
 
         if (debug) {
-            //If Debug mode is on, full mxcontrol cli is exposed in hipchatNotes
-                let controlTask = {
-                    action: action
-                };
+        //If Debug mode is on, full mxcontrol cli is exposed in hipchatNotes
+            let controlTask = {
+                action: args[0]
+            };
 
-                //Adapted from MXControl/CLI.js
-                if (size) controlTask = Object.assign({size: size}, controlTask);
+            //Adapted from MXControl/CLI.js
+            if (size) controlTask = Object.assign({size: size}, controlTask);
 
-                this.task =
-                ["env", "environment"].includes(targetType)
-                    ?  Object.assign({environment: target}, controlTask)
-                    : ["inst", "instance"].includes(targetType)
+            this.task =
+            env ? Object.assign({environment: env}, controlTask)
+                : inst ? Object.assign({instance: inst}, controlTask)
+                    : db ? Object.assign({database: db}, controlTask)
+                        : console.log("Invalid Target Type.");
 
-                        ? Object.assign({instance: target}, controlTask)
-                        : ["db", "database"].includes(targetType)
-
-                            ? Object.assign({database: target}, controlTask)
-                            : console.log("Invalid Target Type.");
-
-                return
-            }
+            return;
+        }
 
         //Normal simplified operation -- be simple.
         //Arguments come in from args const, not flags.
@@ -48,7 +43,7 @@ module.exports = class MXControlEvent extends Event {
         this.task = {
             action: args[0],
             environment: args[1]
-        }
+        };
 
     }
 

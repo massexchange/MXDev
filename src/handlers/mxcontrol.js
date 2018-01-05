@@ -44,8 +44,8 @@ const checkEnvironmentUsingStatusResponse = async (statusJSON, envName) => {
     const {address} = await dnsLookup(`${envName}.massexchange.com`);
     const addressReachable = frontendAddr == address;
 
-    return (backendUp && frontendUp && dbUp && addressReachable)
-}
+    return (backendUp && frontendUp && dbUp && addressReachable);
+};
 
 const parseStatusText = ({
     InstanceName,
@@ -79,14 +79,14 @@ const handleMXControlTask = async event => {
         return;
     }
 
-    if (!useFullCLI && targetName && statusVerbs.includes(action)){
+    if (!useFullCLI && targetName && statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
         const isEnvironmentReady =
             await checkEnvironmentUsingStatusResponse(statusResponse, targetName);
 
         (isEnvironmentReady)
             ? await msgMXControlRoom(`${targetName}.massexchange.com is READY`)
-            : await msgMXControlRoom(`${targetName}.massexchange.com is NOT READY.`)
+            : await msgMXControlRoom(`${targetName}.massexchange.com is NOT READY.`);
 
         return;
     }
