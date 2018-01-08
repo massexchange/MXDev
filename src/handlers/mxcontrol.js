@@ -36,7 +36,6 @@ const checkEnvironmentUsingStatusResponse = async(statusJSON, envName) => {
     const isEnvironmentMember = obj =>
         obj.InstanceEnvironment == envName
         || obj.InstanceName == `mxenvironment-${envName}`;
-    console.log("statusJSON:", statusJSON);
 
     const flatStatus = flattenStatus(statusJSON).filter(isEnvironmentMember);
 
@@ -56,23 +55,27 @@ const checkEnvironmentUsingStatusResponse = async(statusJSON, envName) => {
 
     const addressFromDNS = await dnsLookup(`${envName}.massexchange.com`);
 
-    if (backend.InstanceState != "running")
+    if (backend.InstanceState != "running" && frontend.InstanceState != "running")
+        errors.push("The environment is off.");
+
+    if (backend.InstanceState != "running" && frontend.InstanceState == "running")
         errors.push("The backend is down.");
 
-    if (frontend.InstanceState != "running")
-        errors.push("The frontend is down");
+    if (backend.InstanceState == "running" && frontend.InstanceState != "running")
+        errors.push("The frontend is down.");
 
     if (db.InstanceState != "available")
-        errors.push("The database is unavailable");
+        errors.push("The database is unavailable. Please wait for its operation to complete.");
 
     if (frontend.InstanceAddress != addressFromDNS && frontend.InstanceState == "running")
-        errors.push("There is an error in the enviroments DNS configuration");
+        errors.push(`There is an error in the enviroment's DNS configuration.
+Likely a Dynroute error. Try rebooting.`);
 
     return errors;
 };
 
-const handleMXControlTask = async event => {
-    const statusVerbs = ["status","info","scry","check"];
+const handleMXControlEvent = async event => {
+    const statusVerbs = [...MXControl.possibleActions.statusVerbs];
 
     const useFullCLI = event.debug;
 
@@ -80,17 +83,16 @@ const handleMXControlTask = async event => {
     const targetName = task.instance || task.environment || task.database;
     const action = task.action.toLowerCase();
 
-    const logline =
-        MXControl.buildLog(targetName, task.action, task.size, task.database);
+    msgMXControlRoom(
+        MXControl.buildLog(targetName, task.action, task.size, task.database));
 
-    msgMXControlRoom(logline);
+    console.log(await MXControl.getControlTaskErrors(task));
 
     if (statusVerbs.includes(action)) {
-        let statusResponse = [];
-        try {
-            statusResponse = await MXControl.runTask(task);
-        } catch(e) {
-            console.log(`${targetName} not found.`);
+        const statusResponse = await MXControl.runTask(task);
+        if (!statusResponse) {
+            msgMXControlRoom(`${targetName} not found.`);
+            return;
         }
 
         if (useFullCLI)
@@ -125,6 +127,6 @@ module.exports = {
     matches: event => true,
     name: "MXControl",
     accepts: MXControlEvent,
-    handle: handleMXControlTask,
+    handle: handleMXControlEvent,
     irrelevantMessage: "see what happens when Frank farts..."
 };
