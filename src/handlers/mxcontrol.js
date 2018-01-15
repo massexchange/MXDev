@@ -83,10 +83,16 @@ const handleMXControlEvent = async event => {
     const targetName = task.instance || task.environment || task.database;
     const action = task.action.toLowerCase();
 
-    msgMXControlRoom(
-        MXControl.buildLog(targetName, task.action, task.size, task.database));
+    const errorsWithTasks = await MXControl.getControlTaskErrors(task);
 
-    console.log(await MXControl.getControlTaskErrors(task));
+    if (errorsWithTasks.length != 0) { //For now, just deal with one.
+        const errorArray = parseMXControlErrors(errorsWithTasks[0].errors);
+        errorArray.map(async error => await msgMXControlRoom(error));
+        return;
+    }
+
+    msgMXControlRoom( //If it passes initial error checking, tell the room whats good
+        MXControl.buildLog(targetName, task.action, task.size, task.database));
 
     if (statusVerbs.includes(action)) {
         const statusResponse = await MXControl.runTask(task);
@@ -121,6 +127,14 @@ const handleMXControlEvent = async event => {
         msgMXControlRoom(JSON.stringify(err));
         msgMXControlRoom("Something went wrong with the operation. Ops has been notified.");
     });
+};
+
+const parseMXControlErrors = errorArray => {
+    //first, flatten/clean nested errors.
+    const cleanedErrorArray = errorArray.reduce((agg, curr) => {
+        agg.concat(...curr);
+    }, []);
+    return cleanedErrorArray;
 };
 
 module.exports = {
