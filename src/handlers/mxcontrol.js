@@ -86,10 +86,11 @@ const handleMXControlEvent = async event => {
     const errorsWithTasks = await MXControl.getControlTaskErrors(task);
 
     if (errorsWithTasks.length != 0) { //For now, just deal with one.
+        console.log(errorsWithTasks);
         const errorArray = parseMXControlErrors(errorsWithTasks[0].errors);
-        await msgMXControlRoom("Errors:");
+        await msgMXControlRoom("## Errors:");
         errorArray.map(async error => await msgMXControlRoom(error));
-        await msgMXControlRoom("Please double check your input, and try again.");
+        await msgMXControlRoom("## Please double check your input, and try again.");
         return;
     }
 
