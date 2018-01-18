@@ -55,8 +55,8 @@ const handleMXControlEvent = async event => {
             (upVerbs.includes(action)
             || rebootVerbs.includes(action))
     ) {
-        await mxDynamoDB.putItem({"Name": `MXWeb-${targetName}`});
-        await mxDynamoDB.putItem({"Name": `MXBackend-${targetName}`});
+        await mxDynamoDB.putItem({"Name": `MXWeb-${targetName}`}, "mxDevTest");
+        await mxDynamoDB.putItem({"Name": `MXBackend-${targetName}`}, "mxDevTest");
         //no return -- let the rest of the task run...
     }
 
