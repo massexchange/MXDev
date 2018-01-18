@@ -8,6 +8,8 @@ const dnsLookup = Promise.promisify(require("dns").lookup);
 nconf.env("_");
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
+const statusVerbs = [...MXControl.possibleActions.statusVerbs];
+
 const msgMXControlRoom =
     async message => hipchat.notify(message, {room: "MXControl"});
 
@@ -17,7 +19,7 @@ const flattenStatus = statusJSON =>
         : statusJSON;
 
 const formatStatusResponse = statusJSON =>
-    parseStatusText(flattenStatus(statusJSON));
+    flattenStatus(statusJSON).map(parseStatusText);
 
 const parseStatusText = ({
     InstanceName,
@@ -30,7 +32,68 @@ ${InstanceSize}
 ${InstanceAddress}
 `;
 
-const checkEnvironmentUsingStatusResponse = async(statusJSON, envName) => {
+const checkForControlTaskErrors = async MXControlTask => {
+    const tasksWithErrors = await MXControl.getControlTaskErrors(MXControlTask);
+    if (tasksWithErrors.length != 0) { //For now, just assume one task will ever exist
+        const errorArray = parseMXControlErrors(tasksWithErrors[0].errors);
+        await msgMXControlRoom("## Errors:");
+        await msgMXControlRoom(errorArray.join("\n"));
+        await msgMXControlRoom("## Please double check your input, and try again.");
+        return false;
+    }
+    return true;
+};
+
+
+const parseMXControlErrors = errorArray =>
+    errorArray.reduce((agg, curr) => agg.concat(curr), []);
+
+const handleMXControlEvent = async event => {
+    const useFullCLI = event.debug;
+    const task = event.task;
+    const targetName = task.instance || task.environment || task.database;
+    const action = task.action.toLowerCase();
+
+    if (!checkForControlTaskErrors) return;
+
+    msgMXControlRoom(
+        MXControl.buildLog(targetName, task.action, task.size, task.database));
+
+    //Standard MXControl status functions wasn't meant for a hipchat audience.
+    //Wrap those with something new.
+    if (statusVerbs.includes(action)) {
+
+        const statusResponse = await MXControl.runTask(task);
+
+        if (useFullCLI) //If using the full CLI anyway, format output for Hipchat
+            await msgMXControlRoom(formatStatusResponse(statusResponse).join("\n"));
+
+        else if (!useFullCLI && targetName) {
+
+            const environmentErrors =
+                await checkEnvironmentReadiness(statusResponse, targetName);
+
+            if (environmentErrors.length != 0) {
+                await msgMXControlRoom(`${targetName}.massexchange.com is **NOT READY.**`);
+                environmentErrors.map(async err => await msgMXControlRoom(err));
+
+            } else await msgMXControlRoom(`${targetName}.massexchange.com is **READY.**`);
+
+        } else await msgMXControlRoom("Please specify an environment");
+
+        return;
+    }
+
+    //Else, handle the control task normally.
+    MXControl.runTask(task).catch(err =>{
+        //task failed for some reason -- shoot errors
+        console.log(err);
+        //attempt to notify Hipchat
+        msgMXControlRoom("Something went wrong with the operation. Ops has been notified.");
+    });
+};
+
+const checkEnvironmentReadiness = async(statusJSON, envName) => {
     const errors = [];
 
     const isEnvironmentMember = obj =>
@@ -72,73 +135,6 @@ const checkEnvironmentUsingStatusResponse = async(statusJSON, envName) => {
 Likely a Dynroute error. Try rebooting.`);
 
     return errors;
-};
-
-const handleMXControlEvent = async event => {
-    const statusVerbs = [...MXControl.possibleActions.statusVerbs];
-
-    const useFullCLI = event.debug;
-
-    const task = event.task;
-    const targetName = task.instance || task.environment || task.database;
-    const action = task.action.toLowerCase();
-
-    const errorsWithTasks = await MXControl.getControlTaskErrors(task);
-
-    if (errorsWithTasks.length != 0) { //For now, just assume one task
-        console.log(errorsWithTasks);
-        const errorArray = parseMXControlErrors(errorsWithTasks[0].errors);
-        await msgMXControlRoom("## Errors:");
-        //await errorArray.map(async error => await msgMXControlRoom(error));
-        await msgMXControlRoom(errorArray.join("\n"));
-        await msgMXControlRoom("## Please double check your input, and try again.");
-        return;
-    }
-
-    msgMXControlRoom( //If it passes initial error checking, tell the room whats good
-        MXControl.buildLog(targetName, task.action, task.size, task.database));
-
-    if (statusVerbs.includes(action)) {
-        const statusResponse = await MXControl.runTask(task);
-        if (!statusResponse) {
-            msgMXControlRoom(`${targetName} not found.`);
-            return;
-        }
-
-        if (useFullCLI)
-            formatStatusResponse(statusResponse)
-                .map(async res => await msgMXControlRoom(res));
-
-        if (!useFullCLI && targetName) {
-            const environmentErrors =
-                await checkEnvironmentUsingStatusResponse(statusResponse, targetName);
-
-            if (environmentErrors.length != 0) {
-                await msgMXControlRoom(`${targetName}.massexchange.com is NOT READY.`);
-                environmentErrors.map(async err => await msgMXControlRoom(err));
-
-            } else await msgMXControlRoom(`${targetName}.massexchange.com is READY`);
-        } else await msgMXControlRoom("Please specify an environment");
-
-        return;
-    }
-
-    //Else, send the task and let lambda die.
-    MXControl.runTask(task).catch(err =>{
-        //task failed for some reason -- shoot errors
-        console.log(err);
-        //attempt to notify Hipchat
-        msgMXControlRoom(JSON.stringify(err));
-        msgMXControlRoom("Something went wrong with the operation. Ops has been notified.");
-    });
-};
-
-const parseMXControlErrors = errorArray => {
-    console.log(typeof errorArray,":", errorArray);
-    //first, flatten/clean nested errors.
-    const cleanedErrorArray = errorArray.reduce((agg, curr) => agg.concat(curr), []);
-    console.log("cleaned array:",":", cleanedErrorArray);
-    return cleanedErrorArray;
 };
 
 module.exports = {
