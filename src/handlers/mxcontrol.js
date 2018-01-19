@@ -26,7 +26,7 @@ const handleMXControlEvent = async event => {
     msgMXControlRoom(
         MXControl.buildLog(targetName, task.action, task.size, task.database));
 
-    //Standard MXControl status functions wasn't meant for a hipchat audience.
+    //Standard MXControl status functions weren't meant for a hipchat audience.
     //Wrap those with something new.
     if (statusVerbs.includes(action)) {
 
