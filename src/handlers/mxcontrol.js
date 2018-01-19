@@ -9,9 +9,10 @@ const {mxDynamoDB} = require("mxaws");
 nconf.env("_");
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
+const dynamoName = nconf.get("DYNAMODB:TABLE:MXCONTROL");
+const appNames = ["MXWeb", "MXBackend"];
 const statusVerbs = [...MXControl.possibleActions.statusVerbs];
 const upVerbs = [...MXControl.possibleActions.upVerbs];
-const downVerbs = [...MXControl.possibleActions.downVerbs];
 const rebootVerbs = [...MXControl.possibleActions.rebootVerbs];
 
 const handleMXControlEvent = async event => {
@@ -50,23 +51,21 @@ const handleMXControlEvent = async event => {
         return;
     }
 
-    //Lets start remembering what we brought up...
     if (!useFullCLI &&
-            (upVerbs.includes(action)
-            || rebootVerbs.includes(action))
-    ) {
-        await mxDynamoDB.putItem({"Name": {"S":`MXWeb-${targetName}`}}, "mxDevTest");
-        await mxDynamoDB.putItem({"Name": {"S":`MXBackend-${targetName}`}}, "mxDevTest");
-        //no return -- let the rest of the task run...
-    }
+        (upVerbs.includes(action) || rebootVerbs.includes(action)))
+        addEnvEntriesToDynamo(targetName);
 
-    //Else, handle the control task normally.
     MXControl.runTask(task).catch(err =>{
-        //task failed for some reason -- shoot errors
         console.log(err);
-        //attempt to notify Hipchat
         msgMXControlRoom("Something went wrong with the operation. Ops has been notified.");
     });
+};
+
+const addEnvEntriesToDynamo = async envName => {
+    return appNames.map(async appName =>
+        await mxDynamoDB.putItem({
+            "InstanceName": {"S":`${appName}-${envName}`}
+        }, dynamoName));
 };
 
 const msgMXControlRoom =
