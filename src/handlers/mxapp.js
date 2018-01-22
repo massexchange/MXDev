@@ -31,7 +31,7 @@ const handleMXAppControlResponse = async ({source, message}) => {
 
     const envName = source.split("-")[1];
 
-    const environmentFinished = !remainingInstances.some(instName =>{
+    const environmentFinished = !remainingInstances.some(instName => {
         instName.split("-")[1] == envName;
     });
 
