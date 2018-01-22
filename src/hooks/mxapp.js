@@ -1,6 +1,6 @@
 const Hook = require("../hook");
 
-const MXCtrlResponseHandler = require("../handlers/mxcontrol");
+const MXCtrlResponseHandler = require("../handlers/mxappCtrlResp");
 const MXAppEvent = require("../events/mxapp");
 
 const parseMXAppTrigger = trigger =>
@@ -9,6 +9,7 @@ const parseMXAppTrigger = trigger =>
         message     //a string
     }) => {
         const events = [];
+        console.log(message);
 
         if (message = "UP")
             events.push(
