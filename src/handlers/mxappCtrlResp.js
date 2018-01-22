@@ -9,12 +9,34 @@ nconf.env("_");
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 const dynamoName = nconf.get("DYNAMODB:TABLE:MXCONTROL");
 
+//This handles the notification that an environment has finished coming up
 const msgMXControlRoom =
     async message => hipchat.notify(message, {room: "MXControl"});
 
-const handleMXAppControlResponse = async event => {
-    console.log(event);
-    console.log("warmer, frank");
+const handleMXAppControlResponse = async ({source, message}) => {
+    console.log("Handling UP signal");
+    const instancesComingUp =
+        (await mxDynamoDB.scanTable(dynamoName)).Items
+            .map(item => item.InstanceName.S);
+
+    //stay quiet if the instance coming up is not on the hipchat-mxcontrol list
+    if (!instancesComingUp.includes(source))
+        return;
+
+    await mxDynamoDB.deleteItem(
+        {"InstanceName":{"S":source}}, dynamoName);
+
+    const remainingInstances =
+        instancesComingUp.filter(instName => instName != source);
+
+    const envName = source.split("-")[1];
+
+    const environmentFinished = !remainingInstances.some(instName =>{
+        instName.split("-")[1] == envName;
+    });
+
+    if (environmentFinished)
+        msgMXControlRoom(`Environment ${envName} is now **READY**`);
 };
 
 module.exports = {
