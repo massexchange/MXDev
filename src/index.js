@@ -13,7 +13,8 @@ const
 
     releaseHook = require("./hooks/release"),
     githubHook = require("./hooks/github"),
-    hipchatHook = require("./hooks/hipchat");
+    hipchatHook = require("./hooks/hipchat"),
+    mxappHook = require("./hooks/mxapp");
 
 nconf.env("_");
 
@@ -24,8 +25,10 @@ const LOG = message => {
 const hooks = {
     release: releaseHook,
     github: githubHook,
-    hipchat: hipchatHook
+    hipchat: hipchatHook,
+    mxapp: mxappHook
 };
+
 const handleWebhook = request => {
     LOG("Received webhook!");           //ENV VAR BOOLS OPERATE ON THE
     const trigger = nconf.get("dev")    //PRESENCE OF ANY STRING
