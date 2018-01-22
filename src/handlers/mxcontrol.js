@@ -8,9 +8,9 @@ const {mxDynamoDB} = require("mxaws");
 
 nconf.env("_");
 
+const appNames = ["MXWeb", "MXBackend"];
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 const dynamoName = nconf.get("DYNAMODB:TABLE:MXCONTROL");
-const appNames = ["MXWeb", "MXBackend"];
 const statusVerbs = [...MXControl.possibleActions.statusVerbs];
 const upVerbs = [...MXControl.possibleActions.upVerbs];
 const rebootVerbs = [...MXControl.possibleActions.rebootVerbs];

@@ -1,7 +1,7 @@
 const Hook = require("../hook");
 
 const MXCtrlResponseHandler = require("../handlers/mxcontrol");
-const MXAppEvent = require("../events/mxapp")
+const MXAppEvent = require("../events/mxapp");
 
 const parseMXAppTrigger = trigger =>
     (({
