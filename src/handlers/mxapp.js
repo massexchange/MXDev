@@ -31,12 +31,11 @@ const handleMXAppControlResponse = async ({source, message}) => {
 
     const envName = source.split("-")[1];
 
-    const environmentFinished = !remainingInstances.some(instName => {
-        instName.split("-")[1] == envName;
-    });
+    const sameEnvInsts =
+        remainingInstances.filter(instName => instName.split("-")[1] == envName);
 
-    if (environmentFinished)
-        msgMXControlRoom(`Environment ${envName} is now **READY**`);
+    if (sameEnvInsts.length == 0)
+        msgMXControlRoom(`${envName}.massexchange.com is now **READY**`);
 };
 
 module.exports = {
