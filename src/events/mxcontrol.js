@@ -14,7 +14,6 @@ module.exports = class MXControlEvent extends Event {
 
         const args = _;
         this.debug = debug; //TODO: expose full CLI, not simplified
-        this.sudo = sudo;   //TODO: restrict doing things with certain targets
 
         if (debug) {
         //If Debug mode is on, full mxcontrol cli is exposed in hipchatNotes
