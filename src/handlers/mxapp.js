@@ -24,7 +24,9 @@ const handleMXAppControlResponse = async ({source, message}) => {
         return;
 
     await mxDynamoDB.deleteItem(
-        {"InstanceName":{"S":source}}, dynamoName);
+        {"InstanceName":{"S":source}},
+        dynamoName
+    );
 
     const remainingInstances =
         instancesComingUp.filter(instName => instName != source);
