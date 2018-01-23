@@ -13,15 +13,13 @@ module.exports = class MXControlEvent extends Event {
         super(trigger);
 
         const args = _;
-        this.debug = debug; //TODO: expose full CLI, not simplified
+        this.debug = debug;
 
-        if (debug) {
-        //If Debug mode is on, full mxcontrol cli is exposed in hipchatNotes
+        if (debug) {//If on, expose full mxcontrol CLI rather than simplified one
             let controlTask = {
                 action: args[0]
             };
 
-            //Adapted from MXControl/CLI.js
             if (size) controlTask = Object.assign({size: size}, controlTask);
 
             this.task =
@@ -33,10 +31,10 @@ module.exports = class MXControlEvent extends Event {
             return;
         }
 
+        //Else:
         //Normal simplified operation -- be simple.
         //Arguments come in from args const, not flags.
         // -- only whole-environment operations allowed (no resizes)
-        // -- outputs are simplified -- handled outputs elsewhere
 
         //args: [action, target]
         this.task = {
