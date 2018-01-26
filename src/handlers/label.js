@@ -16,7 +16,11 @@ const jira = new JIRA(nconf.get("JIRA"));
 
 const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:DEVELOPMENT:TOKEN"));
 
-const notMergable = "This PR is not mergeable, are you sure its `ready`?";
+const notReadyBecause = reason =>
+    `This PR ${reason}, are you sure its \`ready\`?`;
+
+const notMergable = notReadyBecause("is not mergeable");
+const notTested = notReadyBecause("has not been tested");
 
 const readyMessage = ({ name, login }, { title, url }, added = true) =>
 `${name || login } just ${added ? "" : "un"}marked ready PR ${link(title, url)}`;
@@ -46,23 +50,32 @@ const handleReady = async ({ label, isPresent, installation, pr, user }) => {
 
     const github = await Github.init(installation);
 
-    if(isPresent && !pr.mergeable) {
-        console.log("PR is not mergable, notifying owner");
+    const notReady = reason => {
+        console.log("PR is not ready, notifying owner");
 
         return Promise.all([
-            github.comment(pr, notMergable),
+            github.comment(pr, reason),
             github.removeLabel(pr, "ready")]);
-    }
+    };
+
+    if(isPresent && !pr.mergeable)
+        return notReady(notMergable);
 
     const githubUser = await github.findUser(user);
 
     var output = readyMessage(githubUser, pr, isPresent);
     try {
         const issue = await jira.lookupIssue(pr.branch);
-        await jira.transitionIssue(issue,
-            isPresent
-                ? "Mark Ready"
-                : "Not Ready");
+
+        try {
+            await jira.transitionIssue(issue,
+                isPresent
+                    ? "Mark Ready"
+                    : "Not Ready");
+        } catch (e) {
+            console.log(`Error transitioning issue: ${e}`);
+            return notReady(notTested);
+        }
 
         output += forIssue(issue);
     } catch(e) {
