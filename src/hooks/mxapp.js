@@ -5,12 +5,17 @@ const MXAppEvent = require("../events/mxapp");
 
 const parseMXAppTrigger = trigger =>
     (({
-        source,     //an InstanceName
+        source,     //an InstanceName, or application
         message     //a string
     }) => {
         const events = [];
 
-        if (message = "UP")
+        if (message = "CRON")
+            events.push(
+                new MXAppEvent(trigger, source, message)
+            );
+
+        if (message = "UP") //TODO: Change to INSTANCE UP
             events.push(
                 new MXAppEvent(trigger, source, message)
             );
