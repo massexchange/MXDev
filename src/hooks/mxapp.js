@@ -10,12 +10,10 @@ const parseMXAppTrigger = trigger =>
     }) => {
         const events = [];
 
-        if (message = "CRON")
-            events.push(
-                new MXAppEvent(trigger, source, message)
-            );
+        const validMessageTypes = ["CRON", "UP"];
+        const messageType = message.split(" ")[0];
 
-        if (message = "UP") //TODO: Change to INSTANCE UP
+        if (validMessageTypes.includes(messageType))
             events.push(
                 new MXAppEvent(trigger, source, message)
             );
