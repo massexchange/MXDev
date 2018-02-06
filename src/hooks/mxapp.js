@@ -1,6 +1,6 @@
 const Hook = require("../hook");
 
-const MXCtrlResponseHandler = require("../handlers/mxapp");
+const MXAppResponseHandler = require("../handlers/mxapp");
 const MXAppEvent = require("../events/mxapp");
 
 const parseMXAppTrigger = trigger =>
@@ -22,7 +22,7 @@ const parseMXAppTrigger = trigger =>
     })(trigger);
 
 module.exports = new Hook(
-    [MXCtrlResponseHandler],
+    [MXAppResponseHandler],
     parseMXAppTrigger,
     (trigger) => {
         console.log("Recieved signal from MXApp");
