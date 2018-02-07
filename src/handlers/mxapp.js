@@ -13,7 +13,20 @@ const dynamoName = nconf.get("DYNAMODB:TABLE:MXCONTROL");
 const msgMXControlRoom =
     async message => hipchat.notify(message, {room: "MXControl"});
 
-const handleMXAppControlResponse = async ({source, message}) => {
+const handleMXAppResponse = async({source, message}) => {
+
+    if (source == "CRON")
+        return await handleMXControlCronResponse(source, message);
+
+    //else
+    return await handleMXControlStartupResponse(source);
+};
+
+const handleMXControlCronResponse = async(source, message) => {
+
+};
+
+const handleMXControlStartupResponse = async(source) => {
     console.log("Handling UP signal");
     const instancesComingUp =
         (await mxDynamoDB.scanTable(dynamoName)).Items
@@ -44,6 +57,6 @@ module.exports = {
     matches: event => true,
     name: "MXApp MXControl Response",
     accepts: MXAppEvent,
-    handle: handleMXAppControlResponse,
+    handle: handleMXAppResponse,
     irrelevantMessage: "see what happens when Frank farts..."
 };
