@@ -15,7 +15,7 @@ const msgMXControlRoom =
 
 const handleMXAppResponse = async({source, message}) => {
 
-    if (source == "CRON")
+    if (source == "MXControl")
         return await handleMXControlCronResponse(message);
 
     //else
