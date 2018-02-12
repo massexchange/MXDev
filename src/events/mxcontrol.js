@@ -17,7 +17,7 @@ module.exports = class MXControlEvent extends Event {
 
         if (debug) {//If on, expose full mxcontrol CLI rather than simplified one
             let controlTask = {
-                action: args[0]
+                action: args[0].toLowerCase()
             };
 
             if (size) controlTask = Object.assign({size: size}, controlTask);
@@ -38,7 +38,7 @@ module.exports = class MXControlEvent extends Event {
 
         //args: [action, target]
         this.task = {
-            action: args[0],
+            action: args[0].toLowerCase(),
             environment: args[1]
         };
     }
