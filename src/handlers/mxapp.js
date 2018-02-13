@@ -46,7 +46,7 @@ const handleMXControlStartupResponse = async(source) => {
     const envName = source.split("-")[1];
 
     const sameEnvInsts =
-        remainingInstances.any(instName => instName.split("-")[1] == envName);
+        remainingInstances.some(instName => instName.split("-")[1] == envName);
 
     if (!sameEnvInsts)
         msgMXControlRoom(`${envName}.massexchange.com is now **READY**`);
