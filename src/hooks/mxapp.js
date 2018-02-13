@@ -10,7 +10,7 @@ const parseMXAppTrigger = trigger =>
     }) => {
         const events = [];
 
-        if (message == "UP")
+        if (source == "MXControl" || message == "UP")
             events.push(
                 new MXAppEvent(trigger, source, message)
             );
