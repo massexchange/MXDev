@@ -18,12 +18,10 @@ const handleMXAppResponse = async({source, message}) => {
     if (source == "MXControl")
         return await handleMXControlCronResponse(message);
 
-    //else
     return await handleMXControlStartupResponse(source);
 };
 
 const handleMXControlCronResponse = async(message) => {
-    //this is easy. Pass the damn message.
     return await msgMXControlRoom(message);
 };
 
