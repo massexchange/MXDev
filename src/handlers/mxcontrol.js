@@ -41,18 +41,19 @@ const handleMXControlEvent = async event => {
                 await checkEnvironmentReadiness(statusResponse, targetName);
 
             if (environmentErrors.length != 0) {
-                await msgMXControlRoom(`${targetName}.massexchange.com is **NOT READY.**`);
-                environmentErrors.map(async err => await msgMXControlRoom(err));
+                const environmentErrorMessages = [
+                    `${targetName}.massexchange.com is **NOT READY.**`,
+                    ...environmentErrors
+                ];
+                await msgMXControlRoom(environmentErrorMessages.join("\n"));
 
             } else await msgMXControlRoom(`${targetName}.massexchange.com is **READY.**`);
 
-        } else await msgMXControlRoom("Please specify an environment");
-
+        }
         return;
     }
 
-    if (!useFullCLI &&
-        (upVerbs.includes(action) || rebootVerbs.includes(action)))
+    if (!useFullCLI && [...upVerbs, ...rebootVerbs].includes(action))
         addEnvEntriesToDynamo(targetName);
 
     MXControl.runTask(task).catch(err =>{
@@ -61,15 +62,18 @@ const handleMXControlEvent = async event => {
     });
 };
 
-const addEnvEntriesToDynamo = async envName => {
-    return appNames.map(async appName =>
-        await mxDynamoDB.putItem({
-            "InstanceName": {"S":`${appName}-${envName}`}
-        }, dynamoName));
-};
+const addEnvEntriesToDynamo = async envName =>
+    Promise.all(
+        appNames.map(appName =>
+            mxDynamoDB.putItem(
+                {"InstanceName": {"S":`${appName}-${envName}`}},
+                dynamoName
+            )
+        )
+    );
 
 const msgMXControlRoom =
-    async message => hipchat.notify(message, {room: "MXControl"});
+    message => hipchat.notify(message, {room: "MXControl"});
 
 const flattenStatus = statusJSON =>
     Array.isArray(statusJSON[0])
@@ -91,17 +95,19 @@ ${InstanceAddress}
 `;
 
 const checkForControlTaskErrors = async MXControlTask => {
-    const tasksWithErrors = await MXControl.getControlTaskErrors(MXControlTask);
-    if (tasksWithErrors.length != 0) { //For now, just assume one task will ever exist
-        const errorArray = [
-            "## Errors:",
-            ...parseMXControlErrors(tasksWithErrors[0].errors),
-            "## Please double check your input, and try again."
-        ];
-        await msgMXControlRoom(errorArray.join("\n"));
-        return false;
-    }
-    return true;
+    const tasksWithErrors =
+        await MXControl.getControlTaskErrors(MXControlTask);
+
+    if (tasksWithErrors.length == 0) return true;
+
+    const errorArray = [
+        "## Errors:",
+        ...parseMXControlErrors(tasksWithErrors[0].errors),
+        "## Please double check your input, and try again."
+    ];
+
+    await msgMXControlRoom(errorArray.join("\n"));
+    return false;
 };
 
 
@@ -133,19 +139,22 @@ const checkEnvironmentReadiness = async(statusJSON, envName) => {
 
     const addressFromDNS = await dnsLookup(`${envName}.massexchange.com`);
 
-    if (backend.InstanceState != "running" && frontend.InstanceState != "running")
+    const backendIsRunning = backend.InstanceState == "running";
+    const frontendIsRunning = frontend.InstanceState == "running";
+
+    if (!backendIsRunning && !frontendIsRunning)
         errors.push("The environment is off.");
 
-    if (backend.InstanceState != "running" && frontend.InstanceState == "running")
+    if (!backendIsRunning && frontendIsRunning)
         errors.push("The backend is down.");
 
-    if (backend.InstanceState == "running" && frontend.InstanceState != "running")
+    if (backendIsRunning && !frontendIsRunning)
         errors.push("The frontend is down.");
 
     if (db.InstanceState != "available")
         errors.push("The database is unavailable. Please wait for its operation to complete.");
 
-    if (frontend.InstanceAddress != addressFromDNS && frontend.InstanceState == "running")
+    if (frontend.InstanceAddress != addressFromDNS && frontendIsRunning)
         errors.push(`There is an error in the enviroment's DNS configuration.
 Likely a Dynroute error. Try rebooting.`);
 
