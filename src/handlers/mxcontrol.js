@@ -21,7 +21,7 @@ const handleMXControlEvent = async event => {
     const targetName = task.instance || task.environment || task.database;
     const action = task.action.toLowerCase();
 
-    if (!checkForControlTaskErrors) return;
+    if (!(await checkForControlTaskErrors(task))) return;
 
     msgMXControlRoom(
         MXControl.buildLog(targetName, task.action, task.size, task.database));
@@ -93,10 +93,12 @@ ${InstanceAddress}
 const checkForControlTaskErrors = async MXControlTask => {
     const tasksWithErrors = await MXControl.getControlTaskErrors(MXControlTask);
     if (tasksWithErrors.length != 0) { //For now, just assume one task will ever exist
-        const errorArray = parseMXControlErrors(tasksWithErrors[0].errors);
-        await msgMXControlRoom("## Errors:");
+        const errorArray = [
+            "## Errors:",
+            ...parseMXControlErrors(tasksWithErrors[0].errors),
+            "## Please double check your input, and try again."
+        ];
         await msgMXControlRoom(errorArray.join("\n"));
-        await msgMXControlRoom("## Please double check your input, and try again.");
         return false;
     }
     return true;
