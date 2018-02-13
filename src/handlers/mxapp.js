@@ -11,7 +11,7 @@ const dynamoName = nconf.get("DYNAMODB:TABLE:MXCONTROL");
 
 //This handles the notification that an environment has finished coming up
 const msgMXControlRoom =
-    async message => hipchat.notify(message, {room: "MXControl"});
+    message => hipchat.notify(message, {room: "MXControl"});
 
 const handleMXAppResponse = async({source, message}) => {
 
