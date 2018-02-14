@@ -102,17 +102,13 @@ const checkForControlTaskErrors = async MXControlTask => {
 
     const errorArray = [
         "## Errors:",
-        ...parseMXControlErrors(tasksWithErrors[0].errors),
+        ...tasksWithErrors[0].errors,
         "## Please double check your input, and try again."
     ];
 
     await msgMXControlRoom(errorArray.join("\n"));
     return false;
 };
-
-
-const parseMXControlErrors = errorArray =>
-    errorArray.reduce((agg, curr) => agg.concat(curr), []);
 
 const checkEnvironmentReadiness = async(statusJSON, envName) => {
     const errors = [];
