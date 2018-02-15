@@ -1,17 +1,14 @@
 const nconf = require("nconf");
 const MXAppEvent = require("../events/mxapp");
+const {msgMXControlRoom} = require("../util/hipchat");
 const {mxDynamoDB} = require("mxaws");
 const Promise = require("bluebird");
-const Hipchat = require("../api/hipchat");
 
 nconf.env("_");
 
-const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 const dynamoName = nconf.get("DYNAMODB:TABLE:MXCONTROL");
 
 //This handles the notification that an environment has finished coming up
-const msgMXControlRoom =
-    message => hipchat.notify(message, {room: "MXControl"});
 
 const handleMXAppResponse = async({source, message}) => {
 

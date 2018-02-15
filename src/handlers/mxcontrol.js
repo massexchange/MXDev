@@ -1,6 +1,6 @@
 const nconf = require("nconf");
 const MXControlEvent = require("../events/mxcontrol");
-const Hipchat = require("../api/hipchat");
+const {msgMXControlRoom} = require("../util/hipchat");
 const MXControl = require("mxcontrol");
 const Promise = require("bluebird");
 const dnsLookup = Promise.promisify(require("dns").lookup);
@@ -9,7 +9,6 @@ const {mxDynamoDB} = require("mxaws");
 nconf.env("_");
 
 const appNames = ["MXWeb", "MXBackend"];
-const hipchat = new Hipchat(nconf.get("HIPCHAT:ROOM:MXCONTROL:TOKEN"));
 const dynamoName = nconf.get("DYNAMODB:TABLE:MXCONTROL");
 const statusVerbs = [...MXControl.possibleActions.statusVerbs];
 const upVerbs = [...MXControl.possibleActions.upVerbs];
@@ -71,9 +70,6 @@ const addEnvEntriesToDynamo = async envName =>
             )
         )
     );
-
-const msgMXControlRoom =
-    message => hipchat.notify(message, {room: "MXControl"});
 
 const flattenStatus = statusJSON =>
     Array.isArray(statusJSON[0])
