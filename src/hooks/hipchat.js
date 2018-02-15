@@ -27,14 +27,13 @@ const parseHipchatTrigger = trigger =>
         }
     }) => {
         const events = [];
-        let command, args;
+        if (event != "room_message")
+            return events;
 
-        if (event == "room_message") {
-            const msgContent = message.split(" ");
-            command = msgContent[0].slice(1);
-            args = minimist(msgContent.slice(1));
-            console.log(args);
-        }
+        const msgContent = message.split(" ");
+        const command = msgContent[0].slice(1);
+        const args = minimist(msgContent.slice(1));
+        console.log(args);
 
         if (command == "mxcontrol")
             events.push(new MXControlEvent(trigger, args));
