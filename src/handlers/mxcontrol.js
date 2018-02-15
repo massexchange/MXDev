@@ -77,8 +77,11 @@ const msgMXControlRoom =
 
 const flattenStatus = statusJSON =>
     Array.isArray(statusJSON[0])
-        ? statusJSON.reduce((agg, curr) => agg.concat(curr), [])
+        ? flatten(statusJSON)
         : statusJSON;
+
+const flatten = arrayOfArrays =>
+    arrayOfArrays.reduce((agg, curr) => agg.concat(curr), []);
 
 const formatStatusResponse = statusJSON =>
     flattenStatus(statusJSON).map(parseStatusText);
@@ -102,7 +105,7 @@ const checkForControlTaskErrors = async MXControlTask => {
 
     const errorArray = [
         "## Errors:",
-        ...tasksWithErrors[0].errors,
+        ...flatten(tasksWithErrors[0].errors),
         "## Please double check your input, and try again."
     ];
 
