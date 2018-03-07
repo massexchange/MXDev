@@ -9,33 +9,36 @@ const Event = require("../event");
 module.exports = class MXControlEvent extends Event {
     //second argument is a deconstructed Minimist args object.
     //"_" is minimist parlance for unflagged arguments
-    constructor(
-        trigger,
-        {_: args, env: environment, inst: instance, db: database, size, debug}
-    ) {
+    constructor(trigger, {_, debug, sudo, env, inst, db, size}) {
         super(trigger);
 
+        const args = _;
         this.debug = debug;
-        const sanitizedAction = args[0].toLowerCase();
 
         if (debug) {//If on, expose full mxcontrol CLI rather than simplified one
-            this.task = {
-                action: sanitizedAction,
-                environment,
-                instance,
-                database,
-                size
+            let controlTask = {
+                action: args[0].toLowerCase()
             };
+
+            if (size) controlTask = Object.assign({size: size}, controlTask);
+
+            this.task =
+            env ? Object.assign({environment: env}, controlTask)
+                : inst ? Object.assign({instance: inst}, controlTask)
+                    : db ? Object.assign({database: db}, controlTask)
+                        : console.log("Invalid Target Type.");
 
             return;
         }
 
+        //Else:
         //Normal simplified operation -- be simple.
         //Arguments come in from args const, not flags.
         // -- only whole-environment operations allowed (no resizes)
+
         //args: [action, target]
         this.task = {
-            action: sanitizedAction,
+            action: args[0].toLowerCase(),
             environment: args[1]
         };
     }
