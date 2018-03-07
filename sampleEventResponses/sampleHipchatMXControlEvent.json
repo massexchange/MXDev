@@ -1,0 +1,39 @@
+{
+    "resource": "/hipchat",
+    "body": {
+        "event": "room_message",
+        "item": {
+            "message": {
+                "date": "2017-10-05T20:40:47.901821+00:00",
+                "from": {
+                    "id": 123123,
+                    "links": {
+                        "self": "https://api.hipchat.com/v2/user/123123"
+                    },
+                    "mention_name": "SampleMan",
+                    "name": "Sample Man",
+                    "version": "2WX1JXMZ"
+                },
+                "id": "3b79279f-96b0-4f9e-b894-1bx536549d02",
+                "mentions": [],
+                "message": "/mxcontrol up inst MXBackend-demo",
+                "type": "message"
+            },
+            "room": {
+                "id": 1231234,
+                "is_archived": false,
+                "links": {
+                    "members": "https://api.hipchat.com/v2/room/1231234/member",
+                    "participants": "https://api.hipchat.com/v2/room/1231234/participant",
+                    "self": "https://api.hipchat.com/v2/room/1231234",
+                    "webhooks": "https://api.hipchat.com/v2/room/1231234/webhook"
+                },
+                "name": "MXControl",
+                "privacy": "private",
+                "version": "ZSL79XV5"
+            }
+        },
+        "oauth_client_id": "5212e25d-3dee-46fc-b1ab-34754b02faeb",
+        "webhook_id": 19298437
+    }
+}
